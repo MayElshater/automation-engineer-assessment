@@ -1,0 +1,18 @@
+services:
+  mock-enrichment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mock-enrichment
+    restart: unless-stopped
+
+    expose:
+      - "8081"
+
+    networks:
+      - n8n_network
+
+networks:
+  n8n_network:
+    external: true
+    name: root_mynetwork
