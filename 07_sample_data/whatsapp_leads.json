@@ -1,0 +1,12 @@
+[
+  {
+    "message_id": "wamid-5001",
+    "profile_name": "Ahmed Hassan",
+    "wa_id": "201001234567",
+    "text": "I need AI automation for my company.",
+    "service_interest": "AI Automation",
+    "email_address": "ahmed.hassan@example.com",
+    "country_code": "EG",
+    "opt_in": true
+  }
+]

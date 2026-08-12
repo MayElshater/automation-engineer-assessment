@@ -1,0 +1,13 @@
+[
+  {
+    "form_submission_id": "web-1001",
+    "full_name": "Ahmed Hassan",
+    "phone": "+20 100 123 4567",
+    "email": "Ahmed.Hassan@example.com",
+    "company": "Delta Solutions",
+    "service": "AI Automation",
+    "country": "Egypt",
+    "message": "We need to automate our customer support and lead qualification.",
+    "consent": true
+  }
+]

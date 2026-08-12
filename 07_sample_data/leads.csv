@@ -1,0 +1,2 @@
+external_id,name,mobile,email,company_name,service_interest,country,message,consent
+csv-1001,Sara Ali,+201112223333,sara@example.com,ABC Group,CRM Automation,Egypt,Need CRM automation,true

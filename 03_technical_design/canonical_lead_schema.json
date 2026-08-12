@@ -1,0 +1,93 @@
+{
+  "lead_id": "uuid",
+
+  "source": {
+    "type": "website | whatsapp | csv",
+    "external_id": "string|null",
+    "received_at": "ISO-8601"
+  },
+
+  "contact": {
+    "name": "string",
+    "phone_raw": "string|null",
+    "phone_normalized": "string|null",
+    "email_raw": "string|null",
+    "email_normalized": "string|null",
+    "consent": true
+  },
+
+  "business": {
+    "company_name": "string|null",
+    "service_interest": "string|null",
+    "country": "string|null",
+    "industry": "string|null",
+    "company_size": "integer|null",
+    "strategic_account": false
+  },
+
+  "request": {
+    "message": "string|null",
+    "urgency": "low | medium | high | unknown"
+  },
+
+  "data_quality": {
+    "is_complete": true,
+    "missing_fields": [],
+    "validation_status": "pending | valid | incomplete | invalid"
+  },
+
+  "identity": {
+    "status": "unique | exact_duplicate | likely_duplicate | merged | manual_review",
+    "matched_lead_id": "uuid|null",
+    "confidence": 0.0
+  },
+
+  "qualification": {
+    "rule_score": 0,
+    "rule_classification": "vip | qualified | nurture | unqualified",
+      "score_breakdown": {
+        "company_size": 20,
+        "service_value": 25,
+        "intent": 15,
+        "urgency": 10,
+        "geography": 10,
+        "strategic_account": 0,
+        "data_quality_penalty": -10
+       },
+    "ai_classification": "high_potential | medium_potential | low_potential | unknown",
+    "ai_confidence": 0.0,
+    "ai_reason": "string|null",
+    "final_status": "vip | qualified | nurture | unqualified | manual_review",
+    "reason": "string|null",
+    "is_vip": false
+   },
+
+  "routing": {
+    "service_category": "string|null",
+    "assigned_sales_rep_id": "uuid|null",
+    "assignment_reason": "string|null",
+    "priority": "low | medium | high | critical"
+  },
+
+  "crm": {
+    "odoo_lead_id": "string|null",
+    "stage": "new | data_completion | qualified | nurture | meeting_booked | won | lost | closed",
+    "next_action": "string|null",
+    "last_synced_at": "ISO-8601|null"
+  },
+
+  "follow_up": {
+    "sequence": "vip | qualified | nurture | none",
+    "step": 0,
+    "next_follow_up_at": "ISO-8601|null",
+    "stopped": false,
+    "stop_reason": "reply | booked | opted_out | manually_closed | null"
+  },
+
+  "processing": {
+    "status": "processing | completed | failed | manual_review",
+    "retry_count": 0,
+    "last_error": "string|null",
+    "updated_at": "ISO-8601"
+  }
+}

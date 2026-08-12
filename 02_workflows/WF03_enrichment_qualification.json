@@ -1,0 +1,881 @@
+{
+    "name":  "WF03_enrichment_qualification",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "content":  "## WF03 Responsibility\nValidates the WF02 handoff, loads canonical state, enriches missing business data, calculates deterministic qualification, obtains an independent Gemini assessment, resolves conflicts, persists decisions, and hands the canonical lead to WF04. It does not perform intake, identity resolution, sales assignment, CRM sync, messaging, or follow-up.",
+                                         "height":  230,
+                                         "width":  920,
+                                         "color":  5
+                                     },
+                      "id":  "b654106d-b3e7-4774-959e-be7f5bc1f10f",
+                      "name":  "WF03 Responsibility",
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "typeVersion":  1,
+                      "position":  [
+                                       0,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## Enrichment Behavior\nEnrichment is requested only when company size, industry, or country is missing. Existing reliable values win over enrichment. The HTTP call uses finite retry: three total attempts with backoff, enabling the required timeout/timeout/success demonstration. Exhaustion becomes a technical failure and Manual Review; values are never fabricated. Configure MOCK_ENRICHMENT_URL.",
+                                         "height":  250,
+                                         "width":  980,
+                                         "color":  6
+                                     },
+                      "id":  "c262e8f0-a562-429c-b38f-c82154b10a8d",
+                      "name":  "Enrichment Behavior",
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "typeVersion":  1,
+                      "position":  [
+                                       980,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## Deterministic Scoring\nThe rule engine implements the documented company-size, service-value, intent, urgency, geography, strategic-account, and data-quality rules. Score is clamped to 0Ã¢â‚¬â€œ100. Repository mappings for service value and target markets are absent, so centralized empty demo/TODO sets are explicit in the Code node; approved configuration must replace them. Gemini never supplies numerical-score inputs.",
+                                         "height":  280,
+                                         "width":  1120,
+                                         "color":  4
+                                     },
+                      "id":  "cf67b629-4290-42e3-84d5-c1518b4596c8",
+                      "name":  "Deterministic Scoring",
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "typeVersion":  1,
+                      "position":  [
+                                       2220,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## AI Independence and Conflict Resolution\nAI does not modify the deterministic score. Material disagreement triggers Manual Review. Technical AI failure is not equivalent to Low Potential.\n\nThe full business-rules matrix preserves deterministic VIP/Qualified/Nurture/Unqualified outcomes for agreement or neutral medium/unknown signals. VIP/Qualified + low_potential and Nurture/Unqualified + high_potential route to Manual Review. Malformed, empty, unavailable, or exhausted AI calls are technical failures.",
+                                         "height":  320,
+                                         "width":  1220,
+                                         "color":  3
+                                     },
+                      "id":  "16924b44-1585-4a27-8c51-0aca62070b34",
+                      "name":  "AI Independence \u0026 Conflict Resolution",
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "typeVersion":  1,
+                      "position":  [
+                                       3540,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## WF04 Handoff\nWF03 preserves the complete canonical lead and hands the final qualification outcome to WF04_routing_crm. WF04 owns Post-Qualification Routing, sales assignment, CRM behavior, and downstream orchestration. The name-based reference may require selecting and publishing WF04 after import; WF04 business logic is not implemented here.",
+                                         "height":  230,
+                                         "width":  820,
+                                         "color":  7
+                                     },
+                      "id":  "9ddc8127-6e2e-4576-a51b-328931d12638",
+                      "name":  "WF04 Handoff",
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "typeVersion":  1,
+                      "position":  [
+                                       5020,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "id":  "3adf8ae7-2361-44d1-a3d2-2f687fb47085",
+                      "name":  "Execute Workflow Trigger",
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       80,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nconst requiredObjects = [\u0027source\u0027, \u0027contact\u0027, \u0027business\u0027, \u0027request\u0027, \u0027data_quality\u0027, \u0027identity\u0027, \u0027processing\u0027];\nconst missing = [];\nif (!lead.lead_id) missing.push(\u0027lead_id\u0027);\nfor (const key of requiredObjects) {\n  if (!lead[key] || typeof lead[key] !== \u0027object\u0027 || Array.isArray(lead[key])) missing.push(key);\n}\nconst allowedIdentity = [\u0027unique\u0027, \u0027exact_duplicate\u0027, \u0027merged\u0027];\nif (!allowedIdentity.includes(lead.identity?.status)) missing.push(\u0027identity.status_not_eligible\u0027);\nif (lead.data_quality?.validation_status !== \u0027valid\u0027 || lead.data_quality?.is_complete !== true) missing.push(\u0027data_quality_not_valid\u0027);\nif (lead.processing?.status === \u0027manual_review\u0027) missing.push(\u0027processing_manual_review\u0027);\nif (missing.length) throw new Error(`WF02 handoff is not eligible for automated qualification: ${missing.join(\u0027, \u0027)}`);\nlead.processing.current_workflow = \u0027WF03_enrichment_qualification\u0027;\nlead.processing.next_workflow = null;\nlead.processing.updated_at = new Date().toISOString();\nlead.wf03_context = { execution_id: $execution.id, started_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "b748553d-05e0-48b9-ba6c-49952b88b375",
+                      "name":  "Validate WF02 Handoff",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       340,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT l.*, $2::jsonb AS workflow_lead\nFROM leads l\nWHERE l.id = $1::uuid\nLIMIT 1;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ [$json.lead_id, JSON.stringify($json)] }}"
+                                                     }
+                                     },
+                      "id":  "0414aeb3-74bc-4ae9-8a79-b19ddbf133e1",
+                      "name":  "Load Canonical Lead",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       600,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const workflowLead = JSON.parse(JSON.stringify($json.workflow_lead ?? {}));\nconst row = $json;\nif (!row.id) throw new Error(\u0027Canonical lead was not found in PostgreSQL.\u0027);\nconst value = (db, fallback) =\u003e db !== null \u0026\u0026 db !== undefined ? db : fallback;\nworkflowLead.lead_id = row.id;\nworkflowLead.source = { ...(workflowLead.source ?? {}), type: value(row.source, workflowLead.source?.type), external_id: value(row.external_source_id, workflowLead.source?.external_id), received_at: value(row.received_at, workflowLead.source?.received_at) };\nworkflowLead.contact = { ...(workflowLead.contact ?? {}), name: value(row.name, workflowLead.contact?.name), phone_raw: value(row.phone_raw, workflowLead.contact?.phone_raw), phone_normalized: value(row.phone_normalized, workflowLead.contact?.phone_normalized), email_raw: value(row.email_raw, workflowLead.contact?.email_raw), email_normalized: value(row.email_normalized, workflowLead.contact?.email_normalized), consent: value(row.consent, workflowLead.contact?.consent) };\nworkflowLead.business = { ...(workflowLead.business ?? {}), company_name: value(row.company_name, workflowLead.business?.company_name), service_interest: value(row.service_interest, workflowLead.business?.service_interest), country: value(row.country, workflowLead.business?.country), industry: value(row.industry, workflowLead.business?.industry), company_size: value(row.company_size, workflowLead.business?.company_size), strategic_account: value(row.strategic_account, workflowLead.business?.strategic_account) };\nworkflowLead.request = { ...(workflowLead.request ?? {}), message: value(row.message, workflowLead.request?.message) };\nworkflowLead.processing = { ...(workflowLead.processing ?? {}), current_workflow: \u0027WF03_enrichment_qualification\u0027, updated_at: new Date().toISOString() };\nreturn [{ json: workflowLead }];"
+                                     },
+                      "id":  "fdfa00c8-a19a-4de8-9be9-5dc0fd6e6b14",
+                      "name":  "Merge Authoritative Lead State",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       860,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nconst missingFields = [\u0027company_size\u0027, \u0027industry\u0027, \u0027country\u0027].filter((field) =\u003e lead.business?.[field] === null || lead.business?.[field] === undefined || lead.business?.[field] === \u0027\u0027);\nlead.enrichment = { required: missingFields.length \u003e 0, requested_fields: missingFields, attempts_configured: 3, status: missingFields.length ? \u0027pending\u0027 : \u0027not_required\u0027 };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "982d81eb-d6ae-432e-a22e-acfaeefd0735",
+                      "name":  "Check Enrichment Need",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1120,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "83d4fa2b-148a-46a2-99df-b07673b9f060",
+                                                                                   "leftValue":  "={{ $json.enrichment.required === true }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "true",
+                                                                                                    "singleValue":  true
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "ee6dce13-a9ee-4dbc-92fb-bc389c563324",
+                      "name":  "Enrichment Required?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       1380,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.MOCK_ENRICHMENT_URL }}",
+                                         "sendBody":  true,
+                                         "contentType":  "json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ { lead_id: $json.lead_id, company_name: $json.business.company_name, email: $json.contact.email_normalized, country: $json.business.country } }}",
+                                         "options":  {
+                                                         "timeout":  5000
+                                                     }
+                                     },
+                      "id":  "201ce2e6-3ed4-464e-80f1-01e9deb60536",
+                      "name":  "Call Mock Enrichment API",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1640,
+                                       300
+                                   ],
+                      "retryOnFail":  true,
+                      "maxTries":  3,
+                      "waitBetweenTries":  2000,
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($(\u0027Check Enrichment Need\u0027).item.json));\nconst raw = $json?.body ?? $json?.data ?? $json;\nconst errors = [];\nif ($json?.error) errors.push(String($json.error.message ?? $json.error));\nif (!raw || typeof raw !== \u0027object\u0027 || Array.isArray(raw)) errors.push(\u0027empty_or_non_object_response\u0027);\nif (raw?.status !== \u0027success\u0027) errors.push(\u0027status_not_success\u0027);\nif (raw?.industry != null \u0026\u0026 typeof raw.industry !== \u0027string\u0027) errors.push(\u0027industry_invalid\u0027);\nif (raw?.company_size != null \u0026\u0026 (!Number.isInteger(Number(raw.company_size)) || Number(raw.company_size) \u003c 0)) errors.push(\u0027company_size_invalid\u0027);\nif (raw?.country != null \u0026\u0026 typeof raw.country !== \u0027string\u0027) errors.push(\u0027country_invalid\u0027);\nif (raw?.strategic_account != null \u0026\u0026 typeof raw.strategic_account !== \u0027boolean\u0027) errors.push(\u0027strategic_account_invalid\u0027);\nif (raw?.confidence != null \u0026\u0026 (!Number.isFinite(Number(raw.confidence)) || Number(raw.confidence) \u003c 0 || Number(raw.confidence) \u003e 1)) errors.push(\u0027confidence_invalid\u0027);\nlead.enrichment = { ...(lead.enrichment ?? {}), status: errors.length ? \u0027failed\u0027 : \u0027validated\u0027, valid: errors.length === 0, errors, response: errors.length ? null : { industry: raw.industry ?? null, company_size: raw.company_size == null ? null : Number(raw.company_size), country: raw.country ?? null, strategic_account: raw.strategic_account ?? null, confidence: raw.confidence == null ? null : Number(raw.confidence) }, completed_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "097fcda0-acf3-45aa-ba4f-b22c558cc58e",
+                      "name":  "Validate Enrichment Response",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1900,
+                                       300
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "61a47b98-74d1-44e0-9e51-6c500a8fee86",
+                                                                                   "leftValue":  "={{ $json.enrichment.valid === true }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "true",
+                                                                                                    "singleValue":  true
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "f3d55341-8127-4e53-bb55-5de7baec6415",
+                      "name":  "Enrichment Valid?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       2160,
+                                       300
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nconst response = lead.enrichment?.response ?? {};\nconst missing = (value) =\u003e value === null || value === undefined || value === \u0027\u0027;\nlead.business = lead.business \u0026\u0026 typeof lead.business === \u0027object\u0027 ? lead.business : {};\nfor (const field of [\u0027industry\u0027, \u0027company_size\u0027, \u0027country\u0027, \u0027strategic_account\u0027]) {\n  if (missing(lead.business[field]) \u0026\u0026 !missing(response[field])) lead.business[field] = response[field];\n}\nlead.enrichment.status = \u0027completed\u0027;\nlead.enrichment.merged_fields = lead.enrichment.requested_fields.filter((field) =\u003e !missing(response[field]));\nlead.processing.updated_at = new Date().toISOString();\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "e376b39a-0a70-4913-a1d7-77dbd94c4a25",
+                      "name":  "Merge Enrichment Data",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       2420,
+                                       260
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH input AS (SELECT $1::jsonb AS j), updated AS (\n UPDATE leads SET industry=COALESCE(leads.industry,input.j#\u003e\u003e\u0027{business,industry}\u0027),company_size=COALESCE(leads.company_size,NULLIF(input.j#\u003e\u003e\u0027{business,company_size}\u0027,\u0027\u0027)::integer),country=COALESCE(leads.country,input.j#\u003e\u003e\u0027{business,country}\u0027),strategic_account=leads.strategic_account OR COALESCE((input.j#\u003e\u003e\u0027{business,strategic_account}\u0027)::boolean,false),updated_at=now() FROM input WHERE leads.id=(input.j-\u003e\u003e\u0027lead_id\u0027)::uuid RETURNING leads.id\n), event AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027enrichment_completed\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027status\u0027,input.j#\u003e\u003e\u0027{enrichment,status}\u0027,\u0027merged_fields\u0027,COALESCE(input.j#\u003e\u0027{enrichment,merged_fields}\u0027,\u0027[]\u0027::jsonb),\u0027confidence\u0027,input.j#\u003e\u0027{enrichment,response,confidence}\u0027),now() FROM updated,input\n) SELECT input.j AS lead FROM input;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ [JSON.stringify($json), $execution.id] }}"
+                                                     }
+                                     },
+                      "id":  "1cbc687c-c764-4ae1-91c2-e9fc1e840221",
+                      "name":  "Persist Enrichment",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       2680,
+                                       260
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nlead.processing = { ...(lead.processing ?? {}), status: \u0027manual_review\u0027, current_workflow: \u0027WF03_enrichment_qualification\u0027, next_workflow: null, last_error: `enrichment_failed:${(lead.enrichment?.errors ?? []).join(\u0027|\u0027)}`, updated_at: new Date().toISOString() };\nlead.qualification = { ...(lead.qualification ?? {}), final_status: \u0027manual_review\u0027, reason: \u0027Technical enrichment failure after finite retry exhaustion; deterministic qualification was not fabricated.\u0027 };\nlead.technical_failure = { stage: \u0027enrichment\u0027, errors: lead.enrichment?.errors ?? [\u0027retry_exhausted_or_unavailable\u0027], occurred_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "01cad6f3-48d8-425d-8ab8-16eceb5a3891",
+                      "name":  "Prepare Enrichment Technical Failure",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       2420,
+                                       620
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH input AS (SELECT $1::jsonb AS j), updated AS (\n UPDATE leads SET final_status=\u0027manual_review\u0027,qualification_reason=input.j#\u003e\u003e\u0027{qualification,reason}\u0027,processing_status=\u0027manual_review\u0027,updated_at=now() FROM input WHERE leads.id=(input.j-\u003e\u003e\u0027lead_id\u0027)::uuid RETURNING leads.id\n), failed AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027failed\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027stage\u0027,input.j#\u003e\u0027{technical_failure,stage}\u0027,\u0027errors\u0027,COALESCE(input.j#\u003e\u0027{technical_failure,errors}\u0027,\u0027[]\u0027::jsonb)),now() FROM updated,input\n), review AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027manual_review_requested\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027reason\u0027,input.j#\u003e\u0027{qualification,reason}\u0027),now() FROM updated,input\n) SELECT input.j AS lead FROM input;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ [JSON.stringify($json), $execution.id] }}"
+                                                     }
+                                     },
+                      "id":  "ae054d93-5be1-4eef-a86f-641448b766c0",
+                      "name":  "Persist Enrichment Failure",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       2680,
+                                       620
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json.lead ?? $json));\n// Centralized assessment/demo defaults. Replace these sets with approved business configuration.\nconst CONFIG = {\n  highValueServices: new Set([]), // TODO: configure approved high-value service names.\n  mediumValueServices: new Set([]), // TODO: configure approved medium-value service names.\n  targetMarkets: new Set([]), // TODO: configure approved target-market country names/codes.\n  clearIntentKeywords: [\u0027need\u0027, \u0027require\u0027, \u0027project\u0027, \u0027proposal\u0027, \u0027quote\u0027, \u0027implement\u0027, \u0027automation\u0027],\n  highUrgencyKeywords: [\u0027urgent\u0027, \u0027immediately\u0027, \u0027asap\u0027],\n  mediumUrgencyKeywords: [\u0027soon\u0027, \u0027this month\u0027, \u0027this quarter\u0027]\n};\nconst norm = (v) =\u003e v == null ? \u0027\u0027 : String(v).trim().toLowerCase();\nconst size = Number(lead.business?.company_size);\nconst companySize = Number.isFinite(size) ? (size \u003e= 500 ? 25 : size \u003e= 100 ? 20 : size \u003e= 20 ? 10 : 5) : 0;\nconst service = norm(lead.business?.service_interest);\nconst declaredTier = norm(lead.business?.service_value_tier);\nconst tier = declaredTier || (CONFIG.highValueServices.has(service) ? \u0027high\u0027 : CONFIG.mediumValueServices.has(service) ? \u0027medium\u0027 : \u0027low\u0027);\nconst serviceValue = tier === \u0027high\u0027 ? 25 : tier === \u0027medium\u0027 ? 15 : 5;\nconst message = norm(lead.request?.message);\nconst declaredIntent = norm(lead.request?.intent);\nconst clearIntent = declaredIntent === \u0027clear_business_requirement\u0027 || CONFIG.clearIntentKeywords.some((word) =\u003e message.includes(word));\nconst intent = clearIntent ? 15 : 5;\nconst declaredUrgency = norm(lead.request?.urgency);\nconst derivedUrgency = declaredUrgency !== \u0027unknown\u0027 \u0026\u0026 declaredUrgency ? declaredUrgency : CONFIG.highUrgencyKeywords.some((word) =\u003e message.includes(word)) ? \u0027high\u0027 : CONFIG.mediumUrgencyKeywords.some((word) =\u003e message.includes(word)) ? \u0027medium\u0027 : \u0027low\u0027;\nconst urgency = derivedUrgency === \u0027high\u0027 ? 15 : derivedUrgency === \u0027medium\u0027 ? 10 : 0;\nconst geography = CONFIG.targetMarkets.has(norm(lead.business?.country)) || lead.business?.is_target_market === true ? 10 : 0;\nconst strategic = lead.business?.strategic_account === true ? 20 : 0;\nconst missingNonCritical = Array.isArray(lead.data_quality?.missing_fields) \u0026\u0026 lead.data_quality.missing_fields.length \u003e 0;\nconst dataQualityPenalty = missingNonCritical ? -10 : 0;\nconst breakdown = { company_size: companySize, service_value: serviceValue, intent, urgency, geography, strategic_account: strategic, data_quality_penalty: dataQualityPenalty };\nconst calculated = Object.values(breakdown).reduce((sum, value) =\u003e sum + value, 0);\nlead.qualification = { ...(lead.qualification ?? {}), rule_score: Math.min(100, Math.max(0, calculated)), score_breakdown: breakdown };\nlead.scoring_context = { service_value_tier: tier, intent_basis: clearIntent ? \u0027clear_business_requirement\u0027 : \u0027general_inquiry\u0027, urgency_basis: derivedUrgency, configuration_notes: [\u0027Service-value and target-market mappings require approved configuration; current explicit demo defaults use empty mapping sets.\u0027, \u0027Intent and urgency keyword lists are centralized assessment/demo defaults and do not use Gemini.\u0027] };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "9eb98773-5e4f-4e0a-9c84-2c64b28eb53a",
+                      "name":  "Calculate Deterministic Score",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       2940,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nconst score = Number(lead.qualification?.rule_score ?? 0);\nconst strategic = lead.business?.strategic_account === true;\nconst classification = strategic || score \u003e= 90 ? \u0027vip\u0027 : score \u003e= 70 ? \u0027qualified\u0027 : score \u003e= 40 ? \u0027nurture\u0027 : \u0027unqualified\u0027;\nlead.qualification = { ...(lead.qualification ?? {}), rule_score: score, rule_classification: classification, score_breakdown: lead.qualification?.score_breakdown ?? {}, is_vip: classification === \u0027vip\u0027 };\nlead.processing.updated_at = new Date().toISOString();\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "06cafd42-8f72-4147-93ac-8a438699d239",
+                      "name":  "Determine Rule Classification",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       3200,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH input AS (SELECT $1::jsonb AS j), updated AS (\n UPDATE leads SET rule_score=(input.j#\u003e\u003e\u0027{qualification,rule_score}\u0027)::integer,rule_classification=input.j#\u003e\u003e\u0027{qualification,rule_classification}\u0027,is_vip=COALESCE((input.j#\u003e\u003e\u0027{qualification,is_vip}\u0027)::boolean,false),updated_at=now() FROM input WHERE leads.id=(input.j-\u003e\u003e\u0027lead_id\u0027)::uuid RETURNING leads.id\n), event AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027qualification_completed\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027stage\u0027,\u0027deterministic_rule_result\u0027,\u0027rule_score\u0027,input.j#\u003e\u0027{qualification,rule_score}\u0027,\u0027rule_classification\u0027,input.j#\u003e\u0027{qualification,rule_classification}\u0027,\u0027score_breakdown\u0027,COALESCE(input.j#\u003e\u0027{qualification,score_breakdown}\u0027,\u0027{}\u0027::jsonb),\u0027scoring_context\u0027,COALESCE(input.j-\u003e\u0027scoring_context\u0027,\u0027{}\u0027::jsonb)),now() FROM updated,input\n) SELECT input.j AS lead FROM input;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ [JSON.stringify($json), $execution.id] }}"
+                                                     }
+                                     },
+                      "id":  "9ed580c6-6812-443b-b0f3-94d90bef19d8",
+                      "name":  "Persist Rule Result",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       3460,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json.lead ?? $json));\nconst assessmentInput = { business_need: lead.request?.message ?? null, service_interest: lead.business?.service_interest ?? null, industry: lead.business?.industry ?? null, company_size: lead.business?.company_size ?? null, country: lead.business?.country ?? null };\nconst prompt = `Independently assess the qualitative potential of this business lead. Do not calculate, infer, mention, or modify any deterministic numerical score or rule classification. Return only JSON with keys classification, urgency, intent, confidence, reason. classification must be one of high_potential, medium_potential, low_potential, unknown. urgency must be high, medium, or low. confidence must be between 0 and 1. reason must be a string or null. Input: ${JSON.stringify(assessmentInput)}`;\nreturn [{ json: { lead, gemini_request: { prompt, expected_schema: { classification: \u0027high_potential|medium_potential|low_potential|unknown\u0027, urgency: \u0027high|medium|low\u0027, intent: \u0027string\u0027, confidence: \u00270..1\u0027, reason: \u0027string|null\u0027 } } } }];"
+                                     },
+                      "id":  "c486bef7-eff8-46aa-9407-413cb45e8c7d",
+                      "name":  "Build Gemini Qualification Request",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       3720,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "={{ $json.gemini_request.prompt }}",
+                                         "hasOutputParser":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "d5826369-66e3-4857-a5ee-8dec900aa086",
+                      "name":  "Run Gemini Assessment",
+                      "type":  "@n8n/n8n-nodes-langchain.chainLlm",
+                      "typeVersion":  1.7,
+                      "position":  [
+                                       3980,
+                                       420
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelName":  "models/gemini-2.5-flash",
+                                         "options":  {
+                                                         "temperature":  0.1
+                                                     }
+                                     },
+                      "id":  "08de7afe-5e6d-47ee-bfa2-38572154c0ca",
+                      "name":  "Gemini Qualitative Classification",
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       3980,
+                                       700
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsonSchemaExample":  "{\"classification\":\"high_potential\",\"urgency\":\"high\",\"intent\":\"purchase\",\"confidence\":0.91,\"reason\":\"The lead describes an immediate enterprise automation requirement.\"}"
+                                     },
+                      "id":  "9de722e6-bc45-4c74-9c1c-9a141dc40483",
+                      "name":  "Gemini Structured Output",
+                      "type":  "@n8n/n8n-nodes-langchain.outputParserStructured",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       4240,
+                                       700
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($(\u0027Build Gemini Qualification Request\u0027).item.json.lead));\nlet raw = $json?.output ?? $json?.text ?? $json?.response ?? $json;\nlet parsed = raw;\nconst errors = [];\nif ($json?.error) errors.push(`provider_error:${String($json.error.message ?? $json.error)}`);\nif (typeof raw === \u0027string\u0027) {\n  const cleaned = raw.trim().replace(/^```(?:json)?\\s*/i, \u0027\u0027).replace(/\\s*```$/, \u0027\u0027);\n  if (!cleaned) errors.push(\u0027empty_response\u0027);\n  else { try { parsed = JSON.parse(cleaned); } catch { errors.push(\u0027malformed_json\u0027); } }\n}\nif (!parsed || typeof parsed !== \u0027object\u0027 || Array.isArray(parsed)) errors.push(\u0027response_not_object\u0027);\nconst classifications = [\u0027high_potential\u0027, \u0027medium_potential\u0027, \u0027low_potential\u0027, \u0027unknown\u0027];\nconst urgencies = [\u0027high\u0027, \u0027medium\u0027, \u0027low\u0027];\nif (!classifications.includes(parsed?.classification)) errors.push(\u0027classification_invalid\u0027);\nif (!urgencies.includes(parsed?.urgency)) errors.push(\u0027urgency_invalid\u0027);\nif (!Number.isFinite(Number(parsed?.confidence)) || Number(parsed.confidence) \u003c 0 || Number(parsed.confidence) \u003e 1) errors.push(\u0027confidence_invalid\u0027);\nif (parsed?.intent == null || typeof parsed.intent !== \u0027string\u0027) errors.push(\u0027intent_invalid\u0027);\nif (!(parsed?.reason === null || typeof parsed?.reason === \u0027string\u0027)) errors.push(\u0027reason_invalid\u0027);\nlead.ai_assessment = errors.length ? { valid: false, technical_failure: true, errors, raw_type: typeof raw } : { valid: true, technical_failure: false, classification: parsed.classification, urgency: parsed.urgency, intent: parsed.intent, confidence: Number(parsed.confidence), reason: parsed.reason };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "b4287910-d062-412f-9c65-fb7a1330a49a",
+                      "name":  "Validate Gemini Response",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       4240,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "37dbb489-a161-4836-a2e7-10bc259c57d1",
+                                                                                   "leftValue":  "={{ $json.ai_assessment.technical_failure === true }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "true",
+                                                                                                    "singleValue":  true
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "ddf6fc24-81b6-4152-8d63-c4957a32ec95",
+                      "name":  "AI Technical Failure?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       4500,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nlead.qualification = { ...(lead.qualification ?? {}), ai_classification: \u0027unknown\u0027, ai_confidence: 0, ai_reason: null, final_status: \u0027manual_review\u0027, reason: `AI technical failure: ${(lead.ai_assessment?.errors ?? [\u0027unavailable\u0027]).join(\u0027, \u0027)}`, is_vip: lead.qualification?.rule_classification === \u0027vip\u0027 };\nlead.processing = { ...(lead.processing ?? {}), status: \u0027manual_review\u0027, current_workflow: \u0027WF03_enrichment_qualification\u0027, next_workflow: \u0027WF04_routing_crm\u0027, last_error: lead.qualification.reason, updated_at: new Date().toISOString() };\nlead.qualification_conflict = { conflict: true, type: \u0027ai_technical_failure\u0027 };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "3f2991b9-53fd-494b-b072-4cde5ca2cd5c",
+                      "name":  "Prepare AI Technical Failure",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       4760,
+                                       620
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json));\nconst rule = lead.qualification?.rule_classification;\nconst ai = lead.ai_assessment?.classification;\nconst matrix = {\n  vip: { high_potential: \u0027vip\u0027, medium_potential: \u0027vip\u0027, low_potential: \u0027manual_review\u0027, unknown: \u0027vip\u0027 },\n  qualified: { high_potential: \u0027qualified\u0027, medium_potential: \u0027qualified\u0027, low_potential: \u0027manual_review\u0027, unknown: \u0027qualified\u0027 },\n  nurture: { high_potential: \u0027manual_review\u0027, medium_potential: \u0027nurture\u0027, low_potential: \u0027nurture\u0027, unknown: \u0027nurture\u0027 },\n  unqualified: { high_potential: \u0027manual_review\u0027, medium_potential: \u0027unqualified\u0027, low_potential: \u0027unqualified\u0027, unknown: \u0027unqualified\u0027 }\n};\nconst finalStatus = matrix[rule]?.[ai];\nif (!finalStatus) throw new Error(`Unsupported conflict matrix combination: ${rule}/${ai}`);\nconst conflict = finalStatus === \u0027manual_review\u0027;\nconst signal = conflict ? \u0027material_conflict\u0027 : ai === \u0027unknown\u0027 || ai === \u0027medium_potential\u0027 ? \u0027neutral_ai_signal\u0027 : \u0027deterministic_ai_agreement\u0027;\nlead.qualification = { ...(lead.qualification ?? {}), ai_classification: ai, ai_confidence: lead.ai_assessment.confidence, ai_reason: lead.ai_assessment.reason, final_status: finalStatus, reason: conflict ? `Material deterministic/AI disagreement: rule=${rule}, ai=${ai}.` : `${signal}: deterministic classification ${rule} preserved.`, is_vip: rule === \u0027vip\u0027 };\nlead.qualification_conflict = { conflict, type: signal };\nlead.processing = { ...(lead.processing ?? {}), status: conflict ? \u0027manual_review\u0027 : \u0027processing\u0027, current_workflow: \u0027WF03_enrichment_qualification\u0027, next_workflow: \u0027WF04_routing_crm\u0027, last_error: null, updated_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "be66ea9e-cea9-4817-953d-6384c1adc32b",
+                      "name":  "Resolve Qualification Conflict",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       4760,
+                                       320
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH input AS (SELECT $1::jsonb AS j), updated AS (\n UPDATE leads SET rule_score=(input.j#\u003e\u003e\u0027{qualification,rule_score}\u0027)::integer,rule_classification=input.j#\u003e\u003e\u0027{qualification,rule_classification}\u0027,ai_classification=input.j#\u003e\u003e\u0027{qualification,ai_classification}\u0027,ai_confidence=(input.j#\u003e\u003e\u0027{qualification,ai_confidence}\u0027)::numeric,final_status=input.j#\u003e\u003e\u0027{qualification,final_status}\u0027,qualification_reason=input.j#\u003e\u003e\u0027{qualification,reason}\u0027,is_vip=COALESCE((input.j#\u003e\u003e\u0027{qualification,is_vip}\u0027)::boolean,false),processing_status=input.j#\u003e\u003e\u0027{processing,status}\u0027,updated_at=now() FROM input WHERE leads.id=(input.j-\u003e\u003e\u0027lead_id\u0027)::uuid RETURNING leads.id\n), completed AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027qualification_completed\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027rule_score\u0027,input.j#\u003e\u0027{qualification,rule_score}\u0027,\u0027rule_classification\u0027,input.j#\u003e\u0027{qualification,rule_classification}\u0027,\u0027score_breakdown\u0027,COALESCE(input.j#\u003e\u0027{qualification,score_breakdown}\u0027,\u0027{}\u0027::jsonb),\u0027ai_classification\u0027,input.j#\u003e\u0027{qualification,ai_classification}\u0027,\u0027ai_confidence\u0027,input.j#\u003e\u0027{qualification,ai_confidence}\u0027,\u0027final_status\u0027,input.j#\u003e\u0027{qualification,final_status}\u0027,\u0027conflict\u0027,COALESCE(input.j#\u003e\u0027{qualification_conflict,conflict}\u0027,\u0027false\u0027::jsonb),\u0027reason\u0027,input.j#\u003e\u0027{qualification,reason}\u0027),now() FROM updated,input\n), technical_failure AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT updated.id,\u0027failed\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027stage\u0027,\u0027gemini\u0027,\u0027reason\u0027,input.j#\u003e\u0027{qualification,reason}\u0027,\u0027errors\u0027,COALESCE(input.j#\u003e\u0027{ai_assessment,errors}\u0027,\u0027[]\u0027::jsonb)),now()\n FROM updated,input WHERE input.j#\u003e\u003e\u0027{qualification_conflict,type}\u0027=\u0027ai_technical_failure\u0027\n), review AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT updated.id,\u0027manual_review_requested\u0027,\u0027WF03_enrichment_qualification\u0027,$2,jsonb_build_object(\u0027reason\u0027,input.j#\u003e\u0027{qualification,reason}\u0027,\u0027type\u0027,input.j#\u003e\u0027{qualification_conflict,type}\u0027),now() FROM updated,input WHERE input.j#\u003e\u003e\u0027{qualification,final_status}\u0027=\u0027manual_review\u0027\n) SELECT input.j AS lead FROM input;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ [JSON.stringify($json), $execution.id] }}"
+                                                     }
+                                     },
+                      "id":  "5d01246f-ad8c-4e03-a47b-44f2f3cf8569",
+                      "name":  "Persist Qualification Decision",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       5020,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json.lead ?? $json));\ndelete lead.enrichment;\ndelete lead.scoring_context;\ndelete lead.ai_assessment;\ndelete lead.qualification_conflict;\ndelete lead.technical_failure;\ndelete lead.wf03_context;\nlead.processing = { ...(lead.processing ?? {}), current_workflow: \u0027WF03_enrichment_qualification\u0027, next_workflow: \u0027WF04_routing_crm\u0027, updated_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+                                     },
+                      "id":  "e777c3ec-e97a-4aae-904c-ade2d3a94e01",
+                      "name":  "Prepare WF04 Handoff",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       5280,
+                                       420
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "workflowId":  {
+                                                            "__rl":  true,
+                                                            "value":  "WF04_routing_crm",
+                                                            "mode":  "id",
+                                                            "cachedResultName":  "WF04_routing_crm"
+                                                        },
+                                         "workflowInputs":  {
+                                                                "mappingMode":  "defineBelow",
+                                                                "value":  {
+
+                                                                          },
+                                                                "matchingColumns":  [
+
+                                                                                    ],
+                                                                "schema":  [
+
+                                                                           ],
+                                                                "attemptToConvertTypes":  false,
+                                                                "convertFieldsToString":  false
+                                                            },
+                                         "mode":  "each",
+                                         "options":  {
+                                                         "waitForSubWorkflow":  true
+                                                     }
+                                     },
+                      "id":  "0304276d-dbf2-483c-be9c-b522d54d1e4e",
+                      "name":  "Execute WF04 - Routing \u0026 CRM",
+                      "type":  "n8n-nodes-base.executeWorkflow",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       5540,
+                                       420
+                                   ]
+                  }
+              ],
+    "pinData":  {
+
+                },
+    "connections":  {
+                        "Execute Workflow Trigger":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Validate WF02 Handoff",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Validate WF02 Handoff":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Load Canonical Lead",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Load Canonical Lead":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Merge Authoritative Lead State",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Merge Authoritative Lead State":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Check Enrichment Need",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Check Enrichment Need":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Enrichment Required?",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Enrichment Required?":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Call Mock Enrichment API",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ],
+                                                                  [
+                                                                      {
+                                                                          "node":  "Calculate Deterministic Score",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Call Mock Enrichment API":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Validate Enrichment Response",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Validate Enrichment Response":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Enrichment Valid?",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         },
+                        "Enrichment Valid?":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Merge Enrichment Data",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ],
+                                                               [
+                                                                   {
+                                                                       "node":  "Prepare Enrichment Technical Failure",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Merge Enrichment Data":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Persist Enrichment",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Persist Enrichment":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Calculate Deterministic Score",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Prepare Enrichment Technical Failure":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Persist Enrichment Failure",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                        "Calculate Deterministic Score":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Determine Rule Classification",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          },
+                        "Determine Rule Classification":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Persist Rule Result",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          },
+                        "Persist Rule Result":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Build Gemini Qualification Request",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Build Gemini Qualification Request":  {
+                                                                   "main":  [
+                                                                                [
+                                                                                    {
+                                                                                        "node":  "Run Gemini Assessment",
+                                                                                        "type":  "main",
+                                                                                        "index":  0
+                                                                                    }
+                                                                                ]
+                                                                            ]
+                                                               },
+                        "Run Gemini Assessment":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Validate Gemini Response",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Validate Gemini Response":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "AI Technical Failure?",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "AI Technical Failure?":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Prepare AI Technical Failure",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ],
+                                                                   [
+                                                                       {
+                                                                           "node":  "Resolve Qualification Conflict",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Prepare AI Technical Failure":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Persist Qualification Decision",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         },
+                        "Resolve Qualification Conflict":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Persist Qualification Decision",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Persist Qualification Decision":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Prepare WF04 Handoff",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Prepare WF04 Handoff":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Execute WF04 - Routing \u0026 CRM",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Gemini Qualitative Classification":  {
+                                                                  "ai_languageModel":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "Run Gemini Assessment",
+                                                                                                   "type":  "ai_languageModel",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                              },
+                        "Gemini Structured Output":  {
+                                                         "ai_outputParser":  [
+                                                                                 [
+                                                                                     {
+                                                                                         "node":  "Run Gemini Assessment",
+                                                                                         "type":  "ai_outputParser",
+                                                                                         "index":  0
+                                                                                     }
+                                                                                 ]
+                                                                             ]
+                                                     }
+                    },
+    "active":  false,
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "versionId":  "afc2f3c2-f4ae-43c1-95d5-ea7356500c9e",
+    "meta":  {
+                 "templateCredsSetupCompleted":  false
+             },
+    "tags":  [
+
+             ]
+}

@@ -1,0 +1,151 @@
+{
+  "name": "WF01 - WhatsApp Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WhatsApp lead intake only\nAccepts a simulated WhatsApp message payload, maps it to the canonical lead contract, and hands it to `WF02_validation_identity`.\n\nThis workflow intentionally performs no validation, contact normalization, duplicate detection, qualification, scoring, AI classification, or CRM synchronization.\n\nThe WF02 reference is name-based because n8n workflow IDs are instance-specific. After both workflows are imported, n8n may require selecting `WF02_validation_identity` once in the Execute Sub-workflow node.",
+        "height": 300,
+        "width": 940,
+        "color": 5
+      },
+      "id": "c1a531c6-44cf-4248-a37e-a5961e6ba5bb",
+      "name": "Workflow Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leads/whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "89363764-737e-4791-82db-d53f64223df0",
+      "name": "WhatsApp Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        400
+      ],
+      "webhookId": "06e24fec-a782-4711-abbc-3370127fac45"
+    },
+    {
+      "parameters": {
+        "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());\n  }\n  return false;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    const value = character === 'x' ? random : (random & 0x3) | 0x8;\n    return value.toString(16);\n  });\n};\n\nconst payload = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    lead_id: generateUuid(),\n    source: {\n      type: 'whatsapp',\n      external_id: valueOrNull(payload.message_id),\n      received_at: timestamp\n    },\n    contact: {\n      name: valueOrNull(payload.profile_name),\n      phone_raw: valueOrNull(payload.wa_id),\n      phone_normalized: null,\n      email_raw: valueOrNull(payload.email_address),\n      email_normalized: null,\n      consent: toBoolean(payload.opt_in)\n    },\n    business: {\n      company_name: null,\n      service_interest: valueOrNull(payload.service_interest),\n      country: valueOrNull(payload.country_code),\n      industry: null,\n      company_size: null,\n      strategic_account: false\n    },\n    request: {\n      message: valueOrNull(payload.text),\n      urgency: 'unknown'\n    },\n    processing: {\n      status: 'processing',\n      retry_count: 0,\n      last_error: null,\n      updated_at: timestamp,\n      current_workflow: 'WF01_whatsapp_intake',\n      next_workflow: 'WF02_validation_identity'\n    },\n    metadata: {\n      schema_version: '1.0',\n      workflow_version: '1.0'\n    }\n  }\n}];"
+      },
+      "id": "a3e28116-2ab6-465a-9542-d061db7897b0",
+      "name": "Normalize WhatsApp Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "WF02_validation_identity",
+          "mode": "id",
+          "cachedResultName": "WF02_validation_identity"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "4c14738b-82f4-4394-8fc3-01f73fc43aa8",
+      "name": "Execute WF02 - Validation & Identity",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'accepted', lead_id: $('Normalize WhatsApp Lead').item.json.lead_id, source: 'whatsapp' } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "0f24d3e4-8e9c-4227-ad4d-494b061599a2",
+      "name": "Respond to WhatsApp Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        768,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize WhatsApp Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize WhatsApp Lead": {
+      "main": [
+        [
+          {
+            "node": "Execute WF02 - Validation & Identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to WhatsApp Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Execute WF02 - Validation & Identity": {
+      "main": [
+        [
+          {
+            "node": "Respond to WhatsApp Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "60c8f838-e0eb-4e30-a0c3-dc7ab1540889",
+  "meta": {
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "H9p4GxJb2PbJBnza",
+  "tags": []
+}
