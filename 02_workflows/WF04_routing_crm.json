@@ -1,0 +1,61 @@
+{
+  "name": "WF04_routing_crm",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Temporary WF04 Stub\n\nThis workflow exists only to allow WF03 integration testing.\n\nThe real WF04 will later implement:\n- Post-Qualification Routing\n- VIP Manager Approval path\n- Qualified Sales Assignment\n- Nurture routing\n- Unqualified handling\n- Manual Review handling\n- Odoo CRM synchronization\n\nThis stub must be replaced during WF04 implementation.",
+        "height": 360,
+        "width": 760,
+        "color": 3
+      },
+      "id": "eb2a6b81-ea35-43e3-bd6f-98755f3f8ac0",
+      "name": "Temporary WF04 Stub",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1040, 520]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "fbf4402d-091f-47f4-abd9-5670825f40e1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [1200, 960]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incomingLead = structuredClone($json ?? {});\n\nreturn [{\n  json: {\n    ...incomingLead,\n    wf04_stub: {\n      status: 'not_implemented',\n      message: 'Temporary WF04 stub used for WF03 integration testing.',\n    },\n  },\n}];"
+      },
+      "id": "de6374ee-cdce-4f1c-88d7-f728769c6fe9",
+      "name": "Return WF04 Stub Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1480, 960]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Return WF04 Stub Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b7c918c2-a2d6-4c28-81b1-d7806965be75",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
