@@ -11,7 +11,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI(title="Lead Automation Mock Services", version="1.0.0")
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 # Process-local by design. Counters reset whenever the application restarts.
 _enrichment_attempts: defaultdict[str, int] = defaultdict(int)
