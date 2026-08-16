@@ -1,0 +1,100 @@
+[
+  {
+    "source": {
+      "type": "whatsapp",
+      "external_id": "evidence-t06-whatsapp-001",
+      "received_at": "2026-08-13T19:20:23.044Z"
+    },
+    "contact": {
+      "name": "Ahmed Hassan",
+      "consent": true,
+      "email_raw": "ahmed.t06.wa@example.com",
+      "phone_raw": "201099900102",
+      "email_normalized": "ahmed.t06.wa@example.com",
+      "phone_normalized": "+201099900102"
+    },
+    "lead_id": "13797eff-59b2-4b21-a9ee-c35525acbd95",
+    "request": {
+      "message": "I need AI automation for Delta Systems.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "EG",
+      "industry": null,
+      "company_name": null,
+      "company_size": null,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-13T19:20:23.350Z",
+      "retry_count": 0,
+      "next_workflow": "WF02_validation_identity",
+      "idempotency_key": "whatsapp:evidence-t06-whatsapp-001",
+      "current_workflow": "WF02_validation_identity"
+    },
+    "audit_events": [
+      {
+        "lead_id": "13797eff-59b2-4b21-a9ee-c35525acbd95",
+        "payload": {
+          "email_present": true,
+          "phone_present": true
+        },
+        "created_at": "2026-08-13T19:20:23.102Z",
+        "event_type": "normalized",
+        "execution_id": "269",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "13797eff-59b2-4b21-a9ee-c35525acbd95",
+        "payload": {
+          "validation_status": "valid"
+        },
+        "created_at": "2026-08-13T19:20:23.115Z",
+        "event_type": "data_completed",
+        "execution_id": "269",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "13797eff-59b2-4b21-a9ee-c35525acbd95",
+        "event_type": "duplicate_detected",
+        "workflow_name": "WF02_validation_identity",
+        "execution_id": "269",
+        "payload": {
+          "status": "likely_duplicate",
+          "confidence": 0.7,
+          "matched_lead_id": "6b3d3b01-c024-4e8e-9c4c-60092f7a36d9",
+          "identity_conflict": false,
+          "reason": "phone=false;email=false;name=true;company=false;different_source=true;within_2_minutes=true;service=true;serious_conflict=false"
+        },
+        "created_at": "2026-08-13T19:20:23.350Z"
+      }
+    ],
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "identity": {
+      "status": "likely_duplicate",
+      "matched_lead_id": "6b3d3b01-c024-4e8e-9c4c-60092f7a36d9",
+      "confidence": 0.7,
+      "identity_conflict": false
+    },
+    "duplicate_decision": {
+      "candidate_lead_id": "13797eff-59b2-4b21-a9ee-c35525acbd95",
+      "matched_lead_id": "6b3d3b01-c024-4e8e-9c4c-60092f7a36d9",
+      "match_type": "likely_identity",
+      "confidence": 0.7,
+      "decision": "manual_review",
+      "reason": "phone=false;email=false;name=true;company=false;different_source=true;within_2_minutes=true;service=true;serious_conflict=false",
+      "created_at": "2026-08-13T19:20:23.350Z"
+    }
+  }
+]

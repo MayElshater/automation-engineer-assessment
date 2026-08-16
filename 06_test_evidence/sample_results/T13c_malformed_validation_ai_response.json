@@ -1,0 +1,101 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t13-malformed-ai-002",
+      "received_at": "2026-08-14T14:34:18.786Z"
+    },
+    "contact": {
+      "name": "T13 AI Failure Lead",
+      "consent": true,
+      "email_raw": "t13.ai.failure.002@example.com",
+      "phone_raw": "+201055513014",
+      "email_normalized": "t13.ai.failure.002@example.com",
+      "phone_normalized": "+201055513014"
+    },
+    "lead_id": "4601751b-baea-4e77-93a9-b0188b516313",
+    "request": {
+      "message": "We need automation for our business.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Technology",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "enrichment": {
+      "status": "not_required",
+      "required": false,
+      "requested_fields": [],
+      "attempts_configured": 3
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-14T14:34:19.244Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t13-malformed-ai-002",
+      "current_workflow": "WF03_enrichment_qualification"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "wf03_context": {
+      "started_at": "2026-08-14T14:34:19.176Z",
+      "execution_id": "316"
+    },
+    "qualification": {
+      "is_vip": false,
+      "rule_score": 40,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 0,
+        "geography": 0,
+        "company_size": 20,
+        "service_value": 5,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "rule_classification": "nurture"
+    },
+    "scoring_context": {
+      "intent_basis": "clear_business_requirement",
+      "urgency_basis": "low",
+      "service_value_tier": "low",
+      "configuration_notes": [
+        "Service-value and target-market mappings require approved configuration; current explicit demo defaults use empty mapping sets.",
+        "Intent and urgency keyword lists are centralized assessment/demo defaults and do not use Gemini."
+      ]
+    },
+    "ai_assessment": {
+      "valid": false,
+      "technical_failure": true,
+      "errors": [
+        "malformed_json",
+        "response_not_object",
+        "classification_invalid",
+        "urgency_invalid",
+        "confidence_invalid",
+        "intent_invalid",
+        "reason_invalid"
+      ],
+      "raw_type": "string"
+    }
+  }
+]

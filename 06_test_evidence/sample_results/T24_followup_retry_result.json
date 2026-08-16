@@ -1,0 +1,58 @@
+[
+  {
+    "test_id": "T24",
+    "scenario": "Follow-up execution failure and lease-based recovery",
+    "result": "PASS",
+    "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+    "sequence_type": "nurture",
+    "tested_step": 1,
+
+    "failure_state": {
+      "followup_status": "processing",
+      "executed_at": null,
+      "idempotency_status": "processing",
+      "lease_expires_at": "2026-08-15 12:11:22.266411+00"
+    },
+
+    "recovery_state": {
+      "followup_status": "executed",
+      "executed_at": "2026-08-15 12:09:54.129788+00",
+      "idempotency_status": "completed",
+      "lease_expires_at": null
+    },
+
+    "idempotency_key": "followup:b9716cb2-84fe-44c3-aadb-6ce2cb9726f0:nurture:1",
+
+    "remaining_sequence": [
+      {
+        "step_number": 2,
+        "status": "scheduled",
+        "executed_at": null
+      },
+      {
+        "step_number": 3,
+        "status": "scheduled",
+        "executed_at": null
+      }
+    ],
+
+    "audit_verification": {
+      "event_type": "followup_executed",
+      "workflow_name": "WF05_followup_engine",
+      "event_count": 1,
+      "first_event_at": "2026-08-15 12:09:54.129788+00",
+      "last_event_at": "2026-08-15 12:09:54.129788+00"
+    },
+
+    "assertions": {
+      "processing_state_preserved_after_interruption": true,
+      "expired_work_recoverable": true,
+      "same_followup_recovered": true,
+      "followup_completed_after_recovery": true,
+      "idempotency_key_completed": true,
+      "remaining_steps_preserved": true,
+      "duplicate_execution_prevented": true,
+      "single_execution_event_recorded": true
+    }
+  }
+]

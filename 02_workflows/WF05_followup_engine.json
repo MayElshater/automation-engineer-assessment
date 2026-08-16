@@ -1,0 +1,1115 @@
+{
+  "name": "WF05_followup_engine",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF05 Responsibility\\n\\nWF05 owns deterministic follow-up sequence initialization and scheduled follow-up execution. It preserves database scheduling as the source of truth.",
+        "height": 280,
+        "width": 560,
+        "color": 2
+      },
+      "id": "b82de999-3749-4d33-88c4-428031e078d3",
+      "name": "WF05 Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Dual Entry Architecture\\n\\nExecute Sub-workflow Trigger initializes a sequence from WF04.\\n\\nSchedule Trigger processes only already-created due followups every 15 minutes. The cadence is assessment/demo configuration.",
+        "height": 280,
+        "width": 560,
+        "color": 4
+      },
+      "id": "73e42423-129d-4525-bca1-987f1c7d9b3a",
+      "name": "Dual Entry Architecture",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        656,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Follow-Up Schedule Configuration\\n\\nQualified: immediate, +24h, +72h.\\nNurture: +24h, +72h, +7d.\\n\\nAll steps use one sequence anchor. These timings are explicit assessment/demo configuration.",
+        "height": 280,
+        "width": 560,
+        "color": 5
+      },
+      "id": "527c2759-ffbc-4fdb-937d-0566c7dd403a",
+      "name": "Follow-Up Schedule Configuration",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Stop Conditions\\n\\nStop before every action for reply, booking, opt-out, manual close, manual review, completion, missing lead, or routing state that no longer allows follow-up.",
+        "height": 280,
+        "width": 560,
+        "color": 6
+      },
+      "id": "e33688ba-ebeb-454a-9502-869565ae3047",
+      "name": "Stop Conditions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Idempotency & Concurrency\\n\\nUNIQUE (lead_id, sequence_type, step_number) prevents duplicate schedules. Execution idempotency plus an atomic scheduled → executed transition prevents duplicate processing.",
+        "height": 280,
+        "width": 560,
+        "color": 7
+      },
+      "id": "3a1ca3c6-312c-4e9a-a3ef-1a3218a387c8",
+      "name": "Idempotency & Concurrency",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Messaging Boundary\\n\\nThis assessment implementation records a simulated outbound follow-up action. Real WhatsApp/email/SMS delivery is intentionally deferred and can replace the simulated action without changing sequence-state, scheduling, stop-condition, or idempotency logic.",
+        "height": 280,
+        "width": 560,
+        "color": 3
+      },
+      "id": "bf00125b-ffdd-4b2e-bed9-d5b9a794469e",
+      "name": "Messaging Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "2aa8f1f8-907d-446b-9f42-2ef19f5c432a",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "8e97d709-86cc-458d-a990-95eadbed1889",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json??{}));const required=[['lead_id',lead.lead_id],['source',lead.source],['contact',lead.contact],['business',lead.business],['qualification',lead.qualification],['processing',lead.processing]];const missing=required.filter(([,v])=>v==null||v==='').map(([k])=>k);if(missing.length)throw new Error('Invalid WF05 handoff: missing '+missing.join(', '));lead.processing={...lead.processing,current_workflow:'WF05_followup_engine',updated_at:new Date().toISOString()};lead.execution_context={entry:'handoff'};return[{json:lead}];"
+      },
+      "id": "f33a6f39-b7a5-41e9-bb67-aa03382c292d",
+      "name": "Validate WF05 Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $2::jsonb input_lead,CASE WHEN l.id IS NULL THEN NULL ELSE to_jsonb(l) END database_lead FROM(SELECT 1)a LEFT JOIN leads l ON l.id=$1::uuid;",
+        "options": {
+          "queryReplacement": "={{ [$json.lead_id, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "98bc9c37-b774-49bb-b439-02fac421a353",
+      "name": "Load Authoritative Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        528,
+        528
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.input_lead??$json.lead??{}));const db=$json.database_lead;if(!db?.id)throw new Error('Authoritative lead not found: '+(lead.lead_id??'unknown'));lead.lead_id=db.id;lead.qualification={...(lead.qualification??{}),final_status:db.final_status??lead.qualification?.final_status};lead.processing={...(lead.processing??{}),status:db.processing_status??lead.processing?.status,current_workflow:'WF05_followup_engine',updated_at:new Date().toISOString()};lead.crm={...(lead.crm??{}),stage:db.crm_stage??lead.crm?.stage,next_action:db.next_action??lead.crm?.next_action};lead.routing={...(lead.routing??{}),assigned_sales_rep_id:db.assigned_sales_rep_id??lead.routing?.assigned_sales_rep_id??null,priority:db.priority??lead.routing?.priority};return[{json:lead}];"
+      },
+      "id": "cd0b3e26-ec89-41ad-9d2b-94b6126ef808",
+      "name": "Merge Authoritative Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));const q=lead.qualification?.final_status,p=lead.processing?.status,a=lead.crm?.next_action,r=lead.routing?.assigned_sales_rep_id;let sequence=null;if(q==='qualified'&&p==='processing'&&a==='sales_follow_up'&&r!=null)sequence='qualified_followup';else if(q==='nurture'&&p==='processing'&&a==='start_nurture_sequence')sequence='nurture';lead.follow_up={...(lead.follow_up??{}),sequence,step:0,stopped:false,stop_reason:null};lead.sequence_required=sequence!==null;return[{json:lead}];"
+      },
+      "id": "502e8cc3-0043-489d-8721-d687096f013e",
+      "name": "Determine Follow-Up Strategy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i1-c",
+              "leftValue": "={{ $json.sequence_required === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d0b44499-3e9e-4b68-a419-5be07fcea5b6",
+      "name": "Sequence Required?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));lead.follow_up={...(lead.follow_up??{}),sequence:null,stopped:false,stop_reason:null,state:'not_required'};for(const k of ['sequence_required','execution_context'])delete lead[k];return[{json:lead}];"
+      },
+      "id": "846e5106-1f8f-40df-aed2-972a7492b16e",
+      "name": "Finalize No Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));const CONFIG={qualified_followup:[{step:1,delay_minutes:0},{step:2,delay_minutes:1440},{step:3,delay_minutes:4320}],nurture:[{step:1,delay_minutes:1440},{step:2,delay_minutes:4320},{step:3,delay_minutes:10080}]};const anchor=new Date();const sequence=lead.follow_up?.sequence;const config=CONFIG[sequence];if(!config)throw new Error('Unsupported follow-up sequence: '+sequence);lead.sequence_schedule={sequence_type:sequence,sequence_started_at:anchor.toISOString(),steps:config.map(x=>({step_number:x.step,scheduled_at:new Date(anchor.getTime()+x.delay_minutes*60000).toISOString(),idempotency_key:'followup:'+lead.lead_id+':'+sequence+':'+x.step}))};return[{json:lead}];"
+      },
+      "id": "c4b3cfd2-1c84-4ec1-8c25-0b379bad2083",
+      "name": "Build Follow-Up Schedule",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(\n SELECT $1::jsonb j\n),steps AS(\n SELECT x FROM i,LATERAL jsonb_array_elements(j#>'{sequence_schedule,steps}')x\n),keys AS(\n INSERT INTO idempotency_keys(key,operation,lead_id,status,created_at)\n SELECT x->>'idempotency_key','followup_execution',(j->>'lead_id')::uuid,'scheduled',now()\n FROM i,steps\n ON CONFLICT(key)DO NOTHING\n RETURNING key\n),ins AS(\n INSERT INTO followups(lead_id,sequence_type,step_number,scheduled_at,executed_at,status,idempotency_key,created_at)\n SELECT (j->>'lead_id')::uuid,j#>>'{sequence_schedule,sequence_type}',(x->>'step_number')::int,(x->>'scheduled_at')::timestamptz,NULL,'scheduled',x->>'idempotency_key',now()\n FROM i,steps\n WHERE(SELECT count(*)FROM keys)>=0\n ON CONFLICT(lead_id,sequence_type,step_number)DO NOTHING\n RETURNING lead_id,sequence_type,step_number,scheduled_at,status,idempotency_key\n),persisted AS(\n SELECT f.lead_id,f.sequence_type,f.step_number,f.scheduled_at,f.status,f.idempotency_key\n FROM followups f,i\n WHERE f.lead_id=(j->>'lead_id')::uuid AND f.sequence_type=j#>>'{sequence_schedule,sequence_type}'\n UNION ALL\n SELECT lead_id,sequence_type,step_number,scheduled_at,status,idempotency_key FROM ins\n),authoritative AS(\n SELECT jsonb_build_object(\n  'sequence_type',p.sequence_type,\n  'sequence_started_at',CASE WHEN p.sequence_type='qualified_followup' THEN min(p.scheduled_at) ELSE min(p.scheduled_at)-interval '1440 minutes' END,\n  'steps',jsonb_agg(jsonb_build_object('step_number',p.step_number,'scheduled_at',p.scheduled_at,'idempotency_key',p.idempotency_key,'status',p.status)ORDER BY p.step_number)\n )schedule\n FROM persisted p\n GROUP BY p.sequence_type\n),audit AS(\n INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT (j->>'lead_id')::uuid,'followup_sequence_initialized','WF05_followup_engine',$2,jsonb_build_object('sequence_type',j#>>'{sequence_schedule,sequence_type}','sequence_started_at',(SELECT schedule->>'sequence_started_at'FROM authoritative),'step_count',3),now()\n FROM i\n WHERE EXISTS(SELECT 1 FROM ins)AND NOT EXISTS(SELECT 1 FROM lead_events e WHERE e.lead_id=(j->>'lead_id')::uuid AND e.event_type='followup_sequence_initialized'AND e.payload->>'sequence_type'=j#>>'{sequence_schedule,sequence_type}')\n)\nSELECT jsonb_set(i.j,'{sequence_schedule}',authoritative.schedule,true)lead,(SELECT count(*)FROM ins)inserted_count\nFROM i,authoritative;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "31aee67a-2604-41ce-ab5a-1191c95921b1",
+      "name": "Ensure Follow-Up Sequence",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1824,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $1::jsonb input_lead,CASE WHEN l.id IS NULL THEN NULL ELSE to_jsonb(l)END database_lead,EXISTS(SELECT 1 FROM bookings b WHERE b.lead_id=$2::uuid AND b.status IN('scheduled','confirmed','success','booked'))booking_exists,COALESCE((SELECT jsonb_agg(e.event_type)FROM lead_events e WHERE e.lead_id=$2::uuid AND e.event_type IN('customer_replied','customer_reply','customer_opted_out','opt_out','manual_close','lead_manually_closed')),'[]'::jsonb)event_types,NULL::jsonb due_followup FROM(SELECT 1)a LEFT JOIN leads l ON l.id=$2::uuid;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.lead ?? $json), ($json.lead ?? $json).lead_id] }}"
+        }
+      },
+      "id": "0c277fa0-45b5-40de-9c5a-8857637d6500",
+      "name": "Load Handoff Stop Context",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2080,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT to_jsonb(f)due_followup\nFROM followups f\nJOIN idempotency_keys k ON k.key=f.idempotency_key\nWHERE f.scheduled_at<=now()\n AND((f.status='scheduled'AND k.status='scheduled')OR(f.status='processing'AND k.status='processing'AND k.expires_at<=now()))\nORDER BY f.scheduled_at,f.step_number,f.id\nLIMIT 50;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "e1876f43-2724-41e0-bccc-34a63b5e60cc",
+      "name": "Find Due Follow-Up Work",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1408,
+        1008
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT jsonb_build_object('lead_id',f.lead_id,'source',jsonb_build_object('type',l.source),'contact',jsonb_build_object('name',l.name,'phone_normalized',l.phone_normalized,'email_normalized',l.email_normalized),'business',jsonb_build_object('company_name',l.company_name,'service_interest',l.service_interest,'country',l.country),'qualification',jsonb_build_object('final_status',l.final_status),'processing',jsonb_build_object('status',l.processing_status,'current_workflow','WF05_followup_engine'),'crm',jsonb_build_object('stage',l.crm_stage,'next_action',l.next_action),'routing',jsonb_build_object('assigned_sales_rep_id',l.assigned_sales_rep_id,'priority',l.priority),'follow_up',jsonb_build_object('sequence',f.sequence_type))input_lead,CASE WHEN l.id IS NULL THEN NULL ELSE to_jsonb(l)END database_lead,to_jsonb(f)due_followup,EXISTS(SELECT 1 FROM bookings b WHERE b.lead_id=f.lead_id AND b.status IN('scheduled','confirmed','success','booked'))booking_exists,COALESCE((SELECT jsonb_agg(e.event_type)FROM lead_events e WHERE e.lead_id=f.lead_id AND e.event_type IN('customer_replied','customer_reply','customer_opted_out','opt_out','manual_close','lead_manually_closed')),'[]'::jsonb)event_types FROM followups f LEFT JOIN leads l ON l.id=f.lead_id WHERE f.id=($1::jsonb->>'id')::uuid;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.due_followup ?? $json)] }}"
+        }
+      },
+      "id": "d7b2f4df-d738-4433-98cc-e8c66827d49e",
+      "name": "Load Scheduled Lead Context",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1584,
+        1008
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.input_lead??$json.lead??{}));const db=$json.database_lead;const candidate=$json.due_followup??lead.followup_candidate??null;if(db?.id){lead.lead_id=db.id;lead.qualification={...(lead.qualification??{}),final_status:db.final_status??lead.qualification?.final_status};lead.processing={...(lead.processing??{}),status:db.processing_status??lead.processing?.status,current_workflow:'WF05_followup_engine',updated_at:new Date().toISOString()};lead.crm={...(lead.crm??{}),stage:db.crm_stage??lead.crm?.stage,next_action:db.next_action??lead.crm?.next_action};lead.routing={...(lead.routing??{}),assigned_sales_rep_id:db.assigned_sales_rep_id??lead.routing?.assigned_sales_rep_id??null,priority:db.priority??lead.routing?.priority}}if(candidate){lead.followup_candidate=candidate;lead.follow_up={...(lead.follow_up??{}),sequence:candidate.sequence_type}}const events=Array.isArray($json.event_types)?$json.event_types:[];const finalStatus=db?.final_status??lead.qualification?.final_status;const processingStatus=db?.processing_status??lead.processing?.status;const nextAction=db?.next_action??lead.crm?.next_action;const assigned=db?.assigned_sales_rep_id??lead.routing?.assigned_sales_rep_id;const sequence=candidate?.sequence_type??lead.follow_up?.sequence;const routeAllowed=(sequence==='qualified_followup'&&finalStatus==='qualified'&&processingStatus==='processing'&&nextAction==='sales_follow_up'&&assigned!=null)||(sequence==='nurture'&&finalStatus==='nurture'&&processingStatus==='processing'&&nextAction==='start_nurture_sequence');let reason=null;if(!db?.id)reason='lead_missing';else if(processingStatus==='completed')reason='lead_completed';else if(finalStatus==='manual_review'||processingStatus==='manual_review')reason='manual_review';else if(['manual_close','closed','close_lead'].includes(nextAction))reason='manual_close';else if($json.booking_exists===true)reason='booking_exists';else if(events.includes('customer_replied')||events.includes('customer_reply'))reason='customer_replied';else if(events.includes('customer_opted_out')||events.includes('opt_out'))reason='customer_opted_out';else if(events.includes('manual_close')||events.includes('lead_manually_closed'))reason='manual_close';else if(!routeAllowed)reason='routing_no_longer_allows_followup';lead.stop_evaluation={stop_required:reason!==null,stop_reason:reason};return[{json:lead}];"
+      },
+      "id": "120c99a8-7f33-4065-a26c-5ccd90187f59",
+      "name": "Evaluate Lead Stop Conditions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i2-c",
+              "leftValue": "={{ $json.stop_evaluation.stop_required === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ffd57ac0-e95a-4b32-9bc3-c7903eed0863",
+      "name": "Stop Follow-Up?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2176,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(\n SELECT $1::jsonb j\n),u AS(\n UPDATE followups\n SET status='cancelled'\n FROM i\n WHERE followups.lead_id=(j->>'lead_id')::uuid\n  AND followups.sequence_type=COALESCE(j#>>'{followup_candidate,sequence_type}',j#>>'{follow_up,sequence}')\n  AND(\n   followups.status='scheduled'\n   OR(\n    followups.status='processing'\n    AND EXISTS(SELECT 1 FROM idempotency_keys k WHERE k.key=followups.idempotency_key AND k.status='processing'AND k.expires_at<=now())\n   )\n  )\n RETURNING id\n),e AS(\n INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT (j->>'lead_id')::uuid,'followup_sequence_stopped','WF05_followup_engine',$2,jsonb_build_object('sequence_type',COALESCE(j#>>'{followup_candidate,sequence_type}',j#>>'{follow_up,sequence}'),'stop_reason',j#>>'{stop_evaluation,stop_reason}','cancelled_count',(SELECT count(*)FROM u)),now()\n FROM i\n WHERE NOT EXISTS(SELECT 1 FROM lead_events x WHERE x.lead_id=(j->>'lead_id')::uuid AND x.event_type='followup_sequence_stopped'AND x.payload->>'sequence_type'=COALESCE(j#>>'{followup_candidate,sequence_type}',j#>>'{follow_up,sequence}'))\n)\nSELECT i.j lead,(SELECT count(*)FROM u)cancelled_count FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "4f477bc5-453b-4be1-8ca9-90810912feab",
+      "name": "Cancel Pending Followups",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2384,
+        992
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));lead.follow_up={...(lead.follow_up??{}),stopped:true,stop_reason:lead.stop_evaluation?.stop_reason??$json.stop_reason??null};delete lead.stop_evaluation;delete lead.followup_candidate;delete lead.sequence_schedule;delete lead.sequence_required;delete lead.execution_context;return[{json:lead}];"
+      },
+      "id": "ea95eb5a-b74a-4578-b2f3-36ee03f881fd",
+      "name": "Finalize Stopped Sequence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2544,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i3-c",
+              "leftValue": "={{ $json.followup_candidate !== null && $json.followup_candidate !== undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ea5da7c8-c83e-49eb-9db7-8a4c9272d1ca",
+      "name": "Due Candidate Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2320,
+        1392
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $1::jsonb lead,(\n SELECT to_jsonb(f)\n FROM followups f\n JOIN idempotency_keys k ON k.key=f.idempotency_key\n WHERE f.lead_id=($1::jsonb->>'lead_id')::uuid\n  AND f.sequence_type=$1::jsonb#>>'{follow_up,sequence}'\n  AND f.scheduled_at<=now()\n  AND((f.status='scheduled'AND k.status='scheduled')OR(f.status='processing'AND k.status='processing'AND k.expires_at<=now()))\n ORDER BY f.step_number,f.scheduled_at\n LIMIT 1\n)due_followup;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "439776bf-a4ac-4b10-8117-b035177166dc",
+      "name": "Find Next Due Step",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2432,
+        1584
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i4-c",
+              "leftValue": "={{ $json.followup_candidate !== null && $json.followup_candidate !== undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "274ff24e-2d4f-4a92-84f2-46aa4224619c",
+      "name": "Due Step?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2896,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));lead.follow_up={...(lead.follow_up??{}),state:'waiting',stopped:false};lead.processing={...lead.processing,status:'processing',current_workflow:'WF05_followup_engine',next_workflow:'WF05_followup_engine',updated_at:new Date().toISOString()};for(const k of ['stop_evaluation','followup_candidate','sequence_schedule','sequence_required','execution_context'])delete lead[k];return[{json:lead}];"
+      },
+      "id": "c8070475-d169-4465-aa73-91bd9b4f0f25",
+      "name": "Prepare Waiting State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(\n SELECT $1::jsonb j\n),candidate AS(\n SELECT f.id,k.key\n FROM followups f\n JOIN idempotency_keys k ON k.key=f.idempotency_key\n JOIN i ON true\n WHERE f.id=(i.j#>>'{followup_candidate,id}')::uuid\n  AND f.scheduled_at<=now()\n  AND((f.status='scheduled'AND k.status='scheduled')OR(f.status='processing'AND k.status='processing'AND k.expires_at<=now()))\n FOR UPDATE OF f,k SKIP LOCKED\n),key_claim AS(\n UPDATE idempotency_keys\n SET status='processing',expires_at=now()+interval '5 minutes'\n FROM candidate\n WHERE idempotency_keys.key=candidate.key\n RETURNING idempotency_keys.key,idempotency_keys.status\n),followup_claim AS(\n UPDATE followups\n SET status='processing'\n FROM candidate,key_claim\n WHERE followups.id=candidate.id\n RETURNING followups.id\n)\nSELECT i.j lead,EXISTS(SELECT 1 FROM followup_claim)should_execute,COALESCE((SELECT status FROM key_claim),(SELECT status FROM idempotency_keys k WHERE k.key=i.j#>>'{followup_candidate,idempotency_key}'),'missing')existing_status\nFROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.lead ?? $json)] }}"
+        }
+      },
+      "id": "5539dd42-6333-4e16-a468-a077b04c8de1",
+      "name": "Claim Follow-Up Execution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2576,
+        1376
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i5-c",
+              "leftValue": "={{ $json.should_execute === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3a68f981-6a97-4054-9bd7-d084cf9aaea3",
+      "name": "Execution Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2560,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));lead.follow_up={...(lead.follow_up??{}),state:'already_processed'};for(const k of ['stop_evaluation','followup_candidate','sequence_schedule','sequence_required','execution_context'])delete lead[k];return[{json:lead}];"
+      },
+      "id": "35c9f509-ea84-4028-967a-ae490b2e16af",
+      "name": "Prepare Already Processed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));const f=lead.followup_candidate;if(!f)throw new Error('Missing due follow-up candidate');const templates={qualified_followup:{1:'Sales follow-up reminder for qualified lead.',2:'Second sales follow-up reminder.',3:'Final automated sales follow-up before escalation.'},nurture:{1:'Initial nurture follow-up.',2:'Second nurture follow-up.',3:'Final nurture follow-up.'}};lead.outbound_action={channel:'simulated',operation:'followup_message',lead_id:lead.lead_id,sequence_type:f.sequence_type,step_number:f.step_number,idempotency_key:f.idempotency_key,message_template:templates[f.sequence_type]?.[f.step_number]};return[{json:lead}];"
+      },
+      "id": "ccc203b5-2e20-4c6d-a2c0-b70c48dc2cfb",
+      "name": "Prepare Simulated Follow-Up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(\n SELECT $1::jsonb j\n),u AS(\n UPDATE followups\n SET status='executed',executed_at=now()\n FROM i\n WHERE followups.id=(j#>>'{followup_candidate,id}')::uuid\n  AND followups.status='processing'\n  AND followups.scheduled_at<=now()\n  AND EXISTS(SELECT 1 FROM idempotency_keys k WHERE k.key=j#>>'{followup_candidate,idempotency_key}'AND k.status='processing')\n RETURNING followups.*\n),idem AS(\n UPDATE idempotency_keys\n SET status='completed',expires_at=NULL,lead_id=(i.j->>'lead_id')::uuid,response_reference=u.id::text\n FROM i,u\n WHERE idempotency_keys.key=i.j#>>'{followup_candidate,idempotency_key}'AND idempotency_keys.status='processing'\n RETURNING idempotency_keys.key\n),e AS(\n INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT u.lead_id,'followup_executed','WF05_followup_engine',$2,jsonb_build_object('sequence_type',u.sequence_type,'step_number',u.step_number,'scheduled_at',u.scheduled_at,'executed_at',u.executed_at,'idempotency_key',u.idempotency_key,'channel','simulated'),now()\n FROM u,idem\n)\nSELECT i.j lead,EXISTS(SELECT 1 FROM u)execution_persisted,(SELECT step_number FROM u)executed_step\nFROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "b4da289d-5396-46b5-b465-3e45ae1c98df",
+      "name": "Persist Follow-Up Execution",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2912,
+        848
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i6-c",
+              "leftValue": "={{ $json.execution_persisted === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "08eace10-a836-4f3a-b4b1-0ba02f272aa1",
+      "name": "Execution Persisted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3088,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),r AS(SELECT count(*)::int n FROM followups f,i WHERE f.lead_id=(j->>'lead_id')::uuid AND f.sequence_type=j#>>'{followup_candidate,sequence_type}' AND f.status='scheduled'),e AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT (j->>'lead_id')::uuid,'followup_sequence_completed','WF05_followup_engine',$2,jsonb_build_object('sequence_type',j#>>'{followup_candidate,sequence_type}'),now()FROM i,r WHERE r.n=0 AND NOT EXISTS(SELECT 1 FROM lead_events x WHERE x.lead_id=(j->>'lead_id')::uuid AND x.event_type='followup_sequence_completed' AND x.payload->>'sequence_type'=j#>>'{followup_candidate,sequence_type}'))SELECT i.j lead,r.n remaining_count,($1::jsonb#>>'{followup_candidate,step_number}')::int executed_step FROM i,r;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.lead ?? $json), $execution.id] }}"
+        }
+      },
+      "id": "b79a05fb-537a-4c21-9d40-d8f169e51f6a",
+      "name": "Check Remaining Steps",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3296,
+        832
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));const remaining=Number($json.remaining_count??0);const step=Number($json.executed_step??lead.followup_candidate?.step_number??0);lead.follow_up={...(lead.follow_up??{}),step,stopped:false,stop_reason:null,state:remaining>0?'waiting':'completed'};lead.processing={...lead.processing,status:'processing',current_workflow:'WF05_followup_engine',next_workflow:remaining>0?'WF05_followup_engine':null,updated_at:new Date().toISOString()};for(const k of ['stop_evaluation','followup_candidate','sequence_schedule','sequence_required','execution_context'])delete lead[k];return[{json:lead}];"
+      },
+      "id": "ede59f55-92b4-41b9-94ee-a7fe27d4b0ce",
+      "name": "Prepare Sequence State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));for(const k of ['stop_evaluation','followup_candidate','sequence_schedule','sequence_required','execution_context','claim'])delete lead[k];return[{json:lead}];"
+      },
+      "id": "f3c92068-c9fc-45bd-bb38-6845c6b6f9d6",
+      "name": "Finalize Follow-Up Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3328,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??{}));\nlead.followup_candidate=$json.due_followup??null;\nreturn[{json:lead}];"
+      },
+      "id": "1d740525-0d0c-4723-b421-84ffc0969f28",
+      "name": "Normalize Due Follow-Up Candidate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        1584
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate WF05 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate WF05 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Load Authoritative Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Authoritative Lead": {
+      "main": [
+        [
+          {
+            "node": "Merge Authoritative Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Authoritative Lead": {
+      "main": [
+        [
+          {
+            "node": "Determine Follow-Up Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Follow-Up Strategy": {
+      "main": [
+        [
+          {
+            "node": "Sequence Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sequence Required?": {
+      "main": [
+        [
+          {
+            "node": "Build Follow-Up Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize No Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Follow-Up Schedule": {
+      "main": [
+        [
+          {
+            "node": "Ensure Follow-Up Sequence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Follow-Up Sequence": {
+      "main": [
+        [
+          {
+            "node": "Load Handoff Stop Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Handoff Stop Context": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Lead Stop Conditions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find Due Follow-Up Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Due Follow-Up Work": {
+      "main": [
+        [
+          {
+            "node": "Load Scheduled Lead Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Scheduled Lead Context": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Lead Stop Conditions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Lead Stop Conditions": {
+      "main": [
+        [
+          {
+            "node": "Stop Follow-Up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Follow-Up?": {
+      "main": [
+        [
+          {
+            "node": "Cancel Pending Followups",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Due Candidate Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Pending Followups": {
+      "main": [
+        [
+          {
+            "node": "Finalize Stopped Sequence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Stopped Sequence": {
+      "main": [
+        [
+          {
+            "node": "Finalize Follow-Up Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Due Candidate Available?": {
+      "main": [
+        [
+          {
+            "node": "Claim Follow-Up Execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Next Due Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Next Due Step": {
+      "main": [
+        [
+          {
+            "node": "Normalize Due Follow-Up Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Due Step?": {
+      "main": [
+        [
+          {
+            "node": "Claim Follow-Up Execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Waiting State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Waiting State": {
+      "main": [
+        [
+          {
+            "node": "Finalize Follow-Up Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Follow-Up Execution": {
+      "main": [
+        [
+          {
+            "node": "Execution Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Claimed?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Simulated Follow-Up",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Already Processed": {
+      "main": [
+        [
+          {
+            "node": "Finalize Follow-Up Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Simulated Follow-Up": {
+      "main": [
+        [
+          {
+            "node": "Persist Follow-Up Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Follow-Up Execution": {
+      "main": [
+        [
+          {
+            "node": "Execution Persisted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Persisted?": {
+      "main": [
+        [
+          {
+            "node": "Check Remaining Steps",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Remaining Steps": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sequence State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sequence State": {
+      "main": [
+        [
+          {
+            "node": "Finalize Follow-Up Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Due Follow-Up Candidate": {
+      "main": [
+        [
+          {
+            "node": "Due Step?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1ab244cb-884d-4d0c-92d6-33abc8739333",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "oUiUDID7qsUOVgFO",
+  "tags": []
+}

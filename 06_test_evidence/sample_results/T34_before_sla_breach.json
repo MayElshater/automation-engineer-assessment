@@ -1,0 +1,15 @@
+[
+  {
+    "id": "80070d42-a649-446e-a6cd-6eecf8746704",
+    "name": "T34 SLA Breach Lead",
+    "final_status": "qualified",
+    "crm_stage": "qualified",
+    "next_action": "sales_follow_up",
+    "processing_status": "processing",
+    "priority": "high",
+    "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6",
+    "sla_started_at": "2026-08-16 07:12:44.3539+00",
+    "elapsed_minutes": 45,
+    "sla_breach_events": 0
+  }
+]

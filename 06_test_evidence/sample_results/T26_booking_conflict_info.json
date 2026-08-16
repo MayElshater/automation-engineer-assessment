@@ -1,0 +1,61 @@
+[
+  {
+    "booking_event": {
+      "source": "calendar",
+      "lead_id": "d5551356-032c-4e52-8ad7-6649c006a4b0",
+      "event_id": "evidence-t26-booking-conflict-001",
+      "booking_id": "t25-meeting-001",
+      "event_type": "booked",
+      "occurred_at": "2026-08-15T16:30:00Z",
+      "scheduled_at": "2026-08-21T11:00:00Z",
+      "idempotency_key": "booking_event:calendar:evidence-t26-booking-conflict-001"
+    },
+    "authoritative_lead": {
+      "id": "d5551356-032c-4e52-8ad7-6649c006a4b0",
+      "name": "T16 Qualified Routing Lead",
+      "is_vip": false,
+      "source": "website",
+      "consent": true,
+      "country": "Egypt",
+      "message": "We need an urgent automation project proposal for implementation this quarter.",
+      "industry": "Technology",
+      "priority": "high",
+      "crm_stage": "qualified",
+      "email_raw": "t16.qualified.002@example.com",
+      "phone_raw": "+201055516017",
+      "created_at": "2026-08-14T20:04:15.602016+00:00",
+      "rule_score": 85,
+      "updated_at": "2026-08-14T20:04:16.788122+00:00",
+      "next_action": "sales_follow_up",
+      "received_at": "2026-08-14T20:04:15.298+00:00",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "final_status": "qualified",
+      "odoo_lead_id": null,
+      "ai_confidence": 0.95,
+      "identity_status": "unique",
+      "email_normalized": "t16.qualified.002@example.com",
+      "phone_normalized": "+201055516017",
+      "service_interest": "AI Automation",
+      "ai_classification": "high_potential",
+      "processing_status": "processing",
+      "strategic_account": false,
+      "validation_status": "valid",
+      "external_source_id": "evidence-t16-qualified-routing-002",
+      "rule_classification": "qualified",
+      "qualification_reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+      "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6"
+    },
+    "existing_booking": {
+      "id": "b5b94e62-1c41-45d1-ad2a-0edf0365a8b1",
+      "source": null,
+      "status": "scheduled",
+      "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+      "created_at": "2026-08-15T15:44:25.889774+00:00",
+      "meeting_at": "2026-08-20T10:00:00+00:00",
+      "updated_at": "2026-08-15T15:44:25.889774+00:00",
+      "external_booking_id": "t25-meeting-001"
+    },
+    "active_followup_count": 0
+  }
+]

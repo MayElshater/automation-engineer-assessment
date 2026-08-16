@@ -1,0 +1,11 @@
+[
+  {
+    "id": "b5b94e62-1c41-45d1-ad2a-0edf0365a8b1",
+    "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+    "external_booking_id": "t25-meeting-001",
+    "meeting_at": "2026-08-22 12:30:00+00",
+    "status": "cancelled",
+    "created_at": "2026-08-15 15:44:25.889774+00",
+    "updated_at": "2026-08-15 17:04:14.580768+00"
+  }
+]

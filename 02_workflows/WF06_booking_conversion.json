@@ -1,0 +1,1171 @@
+{
+  "name": "WF06_booking_conversion",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF06 Responsibility\\n\\nOwns booking, reschedule, cancellation, and conversion domain events with database-backed idempotency and auditable local funnel transitions.",
+        "height": 280,
+        "width": 560,
+        "color": 2
+      },
+      "id": "8e9ff18b-97d0-40b4-8c24-002dfa51f07a",
+      "name": "WF06 Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Booking Event Contract\\n\\nCanonical fields: event_id, event_type, booking_id, lead_id, scheduled_at, source, occurred_at.\\n\\nEvent ID identifies a webhook event; booking ID identifies the booking entity.",
+        "height": 280,
+        "width": 560,
+        "color": 4
+      },
+      "id": "69660047-68cb-4116-8dfb-7e5419ea7fc0",
+      "name": "Booking Event Contract",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Booking Event Idempotency\\n\\nKey: booking_event:<source>:<event_id>.\\n\\nOnly the first atomic claim may perform side effects. Completed deliveries return an explicit replay response.",
+        "height": 280,
+        "width": 560,
+        "color": 5
+      },
+      "id": "5834e63f-ddac-4eb6-a4f7-672531fdb773",
+      "name": "Booking Event Idempotency",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3728,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Booking State Machine\\n\\nbooked → scheduled\\nrescheduled → rescheduled\\ncancelled → cancelled\\nconverted → completed\\n\\nPrerequisite migration: ALTER TABLE bookings ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();",
+        "height": 330,
+        "width": 620,
+        "color": 6
+      },
+      "id": "55d804c6-20fb-4e68-94a7-f0f6bffc44e6",
+      "name": "Booking State Machine",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4368,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Follow-Up Cancellation\\n\\nBookings and conversions proactively cancel scheduled follow-ups plus only lease-expired processing follow-ups. Executed history is preserved.",
+        "height": 280,
+        "width": 560,
+        "color": 7
+      },
+      "id": "75ffe35a-d12e-40f0-8a34-6c58254db88e",
+      "name": "Follow-Up Cancellation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5072,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Sales Rep Notification Boundary\\n\\nReal WhatsApp/email notification is intentionally deferred. WF06 records a simulated outbound notification intent without fabricating a salesperson.",
+        "height": 280,
+        "width": 560,
+        "color": 3
+      },
+      "id": "495c76be-54d9-49c6-b86e-ef0ef3b00ded",
+      "name": "Sales Rep Notification Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5728,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## CRM / Odoo Integration Boundary\\n\\nBooking and conversion state, crm_stage, and next_action are persisted locally. Real Odoo synchronization consumes these transitions later; API retry, rate-limit, and timeout handling belongs to the CRM recovery layer.",
+        "height": 320,
+        "width": 620,
+        "color": 4
+      },
+      "id": "725f8843-bd05-4f39-a1d9-f3e8ff445ddb",
+      "name": "CRM / Odoo Integration Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6368,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Error / Recovery Boundary\\n\\nDeterministic validation, missing-lead, and booking-state conflicts return explicit results. WF07 owns global retry, DLQ, and manual replay.",
+        "height": 280,
+        "width": 560,
+        "color": 6
+      },
+      "id": "5c410808-51e5-44ac-bb51-64101708c858",
+      "name": "Error / Recovery Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5600,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Test Scope\\n\\nDesigned for future T25–T28 coverage and duplicate-webhook delivery without test-specific hooks. Tests are intentionally not implemented in this task.",
+        "height": 280,
+        "width": 560,
+        "color": 2
+      },
+      "id": "50abfd79-f7d7-4376-9427-3ea7b11c0201",
+      "name": "Test Scope",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5600,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking/events",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9d673cfb-54d7-4e4a-9212-9d4383a6d247",
+      "name": "Booking Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        720
+      ],
+      "webhookId": "6384e01b-388b-4780-b553-41a536599dfd"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input=$json.body??$json;const data=input.data??input;const trim=v=>v==null?null:String(v).trim()||null;const rawType=trim(data.event_type??data.type??data.event)?.toLowerCase();const aliases={booked:'booked',booking_created:'booked',scheduled:'booked',rescheduled:'rescheduled',booking_rescheduled:'rescheduled',cancelled:'cancelled',canceled:'cancelled',booking_cancelled:'cancelled',booking_canceled:'cancelled',converted:'converted',completed:'converted',conversion:'converted'};const eventId=trim(data.event_id??data.webhook_event_id??data.id);const source=trim(data.source??input.source)??'booking_webhook';const occurred=trim(data.occurred_at??data.created_at)??new Date().toISOString();return[{json:{booking_event:{event_id:eventId,event_type:aliases[rawType]??rawType,booking_id:trim(data.booking_id??data.external_booking_id??data.booking?.id),lead_id:trim(data.lead_id??data.metadata?.lead_id),scheduled_at:trim(data.scheduled_at??data.meeting_at??data.start_time),source,occurred_at:occurred}}}];"
+      },
+      "id": "940badaf-174c-4c89-a737-94277effdc36",
+      "name": "Normalize Booking Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out=JSON.parse(JSON.stringify($json));const e=out.booking_event??{};const missing=['event_id','event_type','booking_id','lead_id'].filter(k=>!e[k]);const invalid=[];if(e.event_type&&!['booked','rescheduled','cancelled','converted'].includes(e.event_type))invalid.push('event_type');if(e.lead_id&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e.lead_id))invalid.push('lead_id');if(['booked','rescheduled'].includes(e.event_type)){if(!e.scheduled_at)missing.push('scheduled_at');else if(!Number.isFinite(Date.parse(e.scheduled_at)))invalid.push('scheduled_at')}out.booking_validation={valid:missing.length===0&&invalid.length===0,missing_fields:[...new Set(missing)],invalid_fields:[...new Set(invalid)]};return[{json:out}];"
+      },
+      "id": "7972252c-761a-4ee6-8d0b-f0571a6d749a",
+      "name": "Validate Booking Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i1-c",
+              "leftValue": "={{ $json.booking_validation.valid === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "16209527-7201-4565-a1cc-0b3b2ef39470",
+      "name": "Booking Event Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3200,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$json.booking_event??{};return[{json:{http_status:400,response:{status:'invalid_booking_event',event_type:e.event_type??null,booking_id:e.booking_id??null,lead_id:e.lead_id??null,duplicate:false,validation:$json.booking_validation}}}];"
+      },
+      "id": "8162dbbc-196d-4fc9-a36c-f0b21308ae18",
+      "name": "Prepare Invalid Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3456,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {
+          "responseCode": "={{ $json.http_status }}"
+        }
+      },
+      "id": "99679fe9-4263-4b30-b0d5-bb8bf8e3322a",
+      "name": "Respond Invalid Booking Event",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3728,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out=JSON.parse(JSON.stringify($json));const e=out.booking_event;const source=String(e.source??'booking_webhook').trim().toLowerCase();e.idempotency_key='booking_event:'+source+':'+e.event_id;return[{json:out}];"
+      },
+      "id": "9f5299fa-26bb-42fb-a80e-2954b6eeaf56",
+      "name": "Build Booking Idempotency Key",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3456,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),fresh AS(INSERT INTO idempotency_keys(key,operation,lead_id,status,created_at)SELECT j#>>'{booking_event,idempotency_key}','booking_event',(j#>>'{booking_event,lead_id}')::uuid,'processing',now()FROM i ON CONFLICT(key)DO NOTHING RETURNING key,status),retry AS(UPDATE idempotency_keys SET status='processing',expires_at=NULL FROM i WHERE idempotency_keys.key=j#>>'{booking_event,idempotency_key}'AND idempotency_keys.status='failed' RETURNING idempotency_keys.key,idempotency_keys.status),claimed AS(SELECT * FROM fresh UNION ALL SELECT * FROM retry)SELECT i.j#>'{booking_event}'booking_event,EXISTS(SELECT 1 FROM claimed)booking_event_claimed,COALESCE((SELECT status FROM claimed LIMIT 1),(SELECT status FROM idempotency_keys k WHERE k.key=i.j#>>'{booking_event,idempotency_key}'),'missing')existing_status FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "649c8571-0e9d-44b2-9c94-5cd74b1d675a",
+      "name": "Claim Booking Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3728,
+        624
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i2-c",
+              "leftValue": "={{ $json.booking_event_claimed === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b36025c8-b754-43f2-9cbc-d8f8649bcbc1",
+      "name": "Event Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3984,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$json.booking_event??{};return[{json:{response:{status:'already_processed',event_type:e.event_type,booking_id:e.booking_id,lead_id:e.lead_id,duplicate:true},http_status:200}}];"
+      },
+      "id": "46a54fbd-9da2-406a-8e60-eccb602ae2ff",
+      "name": "Prepare Replay Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4016,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "59eda2c4-28b1-4bf4-94a6-6a6a525aa4c3",
+      "name": "Respond Booking Replay",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        4208,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $1::jsonb booking_event,CASE WHEN l.id IS NULL THEN NULL ELSE to_jsonb(l)END authoritative_lead,CASE WHEN b.id IS NULL THEN NULL ELSE to_jsonb(b)END existing_booking,(SELECT count(*)::int FROM followups f WHERE f.lead_id=($1::jsonb->>'lead_id')::uuid AND f.status IN('scheduled','processing'))active_followup_count FROM(SELECT 1)a LEFT JOIN leads l ON l.id=($1::jsonb->>'lead_id')::uuid LEFT JOIN bookings b ON b.external_booking_id=$1::jsonb->>'booking_id';",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event)] }}"
+        }
+      },
+      "id": "98db2686-1f50-4be6-bc4d-2ca8574c0cca",
+      "name": "Load Booking Context",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4208,
+        608
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i3-c",
+              "leftValue": "={{ $json.authoritative_lead !== null && $json.authoritative_lead !== undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d7db17ae-c652-4bb6-a9e3-8805b1a159c3",
+      "name": "Lead Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4432,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb e),done AS(UPDATE idempotency_keys SET status='completed',expires_at=NULL,response_reference='booking_lead_not_found'FROM i WHERE key=e->>'idempotency_key'AND status='processing')SELECT i.e booking_event FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event)] }}"
+        }
+      },
+      "id": "217f1c0b-cbdf-4eb5-a2f8-238394fec094",
+      "name": "Complete Missing Lead Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4480,
+        1184
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$json.booking_event??$json;return[{json:{response:{status:'booking_lead_not_found',event_type:e.event_type,booking_id:e.booking_id,lead_id:e.lead_id,duplicate:false},http_status:422}}];"
+      },
+      "id": "3befb080-6993-4b3b-b047-3a57c79329cf",
+      "name": "Prepare Missing Lead Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4672,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {
+          "responseCode": "={{ $json.http_status }}"
+        }
+      },
+      "id": "8a07470d-e681-4cdc-acc2-7d545105cb90",
+      "name": "Respond Booking Failure",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        4896,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "event-0",
+                    "leftValue": "={{ $json.booking_event.event_type }}",
+                    "rightValue": "booked",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "booked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "event-1",
+                    "leftValue": "={{ $json.booking_event.event_type }}",
+                    "rightValue": "rescheduled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rescheduled"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "event-2",
+                    "leftValue": "={{ $json.booking_event.event_type }}",
+                    "rightValue": "cancelled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelled"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "event-3",
+                    "leftValue": "={{ $json.booking_event.event_type }}",
+                    "rightValue": "converted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "converted"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "c99a07b4-5477-42d8-bbc9-16b294780d6d",
+      "name": "Booking Event Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4704,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb e),b AS(INSERT INTO bookings(lead_id,external_booking_id,meeting_at,status,created_at,updated_at)SELECT (e->>'lead_id')::uuid,e->>'booking_id',(e->>'scheduled_at')::timestamptz,'scheduled',now(),now()FROM i ON CONFLICT(external_booking_id)DO UPDATE SET meeting_at=EXCLUDED.meeting_at,status='scheduled',updated_at=now()WHERE bookings.lead_id=EXCLUDED.lead_id RETURNING bookings.*),l AS(UPDATE leads SET crm_stage='meeting_booked',next_action='attend_meeting',updated_at=now()FROM i,b WHERE leads.id=b.lead_id RETURNING leads.*),c AS(UPDATE followups SET status='cancelled'FROM i,b WHERE followups.lead_id=b.lead_id AND(followups.status='scheduled'OR(followups.status='processing'AND EXISTS(SELECT 1 FROM idempotency_keys k WHERE k.key=followups.idempotency_key AND k.status='processing'AND k.expires_at<=now())))RETURNING followups.id),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'booking_created','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'booking_id',b.id,'meeting_at',b.meeting_at,'assigned_sales_rep_id',l.assigned_sales_rep_id,'source',i.e->>'source','event_id',i.e->>'event_id'),now()FROM i,b,l),fc AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'booking_followups_cancelled','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'cancelled_count',(SELECT count(*)FROM c),'event_id',i.e->>'event_id'),now()FROM i,b WHERE EXISTS(SELECT 1 FROM c))SELECT i.e booking_event,to_jsonb(l)authoritative_lead,to_jsonb(b)booking,EXISTS(SELECT 1 FROM b)mutation_success,(SELECT count(*)FROM c)cancelled_count FROM i LEFT JOIN b ON true LEFT JOIN l ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event), $execution.id] }}"
+        }
+      },
+      "id": "19ee82d6-e2c4-46cb-84e7-a3b3d9061f53",
+      "name": "Persist Booked State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5024,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb e),b AS(UPDATE bookings SET meeting_at=(e->>'scheduled_at')::timestamptz,status='rescheduled',updated_at=now()FROM i WHERE external_booking_id=e->>'booking_id'AND lead_id=(e->>'lead_id')::uuid RETURNING bookings.*),l AS(UPDATE leads SET crm_stage='meeting_booked',next_action='attend_meeting',updated_at=now()FROM b WHERE leads.id=b.lead_id RETURNING leads.*),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'booking_rescheduled','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'booking_id',b.id,'meeting_at',b.meeting_at,'event_id',i.e->>'event_id'),now()FROM i,b)SELECT i.e booking_event,to_jsonb(l)authoritative_lead,to_jsonb(b)booking,EXISTS(SELECT 1 FROM b)mutation_success FROM i LEFT JOIN b ON true LEFT JOIN l ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event), $execution.id] }}"
+        }
+      },
+      "id": "0ee6432f-94cb-490d-92f8-947a7438f1db",
+      "name": "Persist Rescheduled State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5008,
+        560
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb e),b AS(UPDATE bookings SET status='cancelled',updated_at=now()FROM i WHERE external_booking_id=e->>'booking_id'AND lead_id=(e->>'lead_id')::uuid RETURNING bookings.*),l AS(UPDATE leads SET crm_stage=CASE WHEN leads.final_status='nurture'THEN'nurture'ELSE'qualified'END,next_action='booking_cancelled_review',updated_at=now()FROM b WHERE leads.id=b.lead_id RETURNING leads.*),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'booking_cancelled','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'booking_id',b.id,'event_id',i.e->>'event_id'),now()FROM i,b)SELECT i.e booking_event,to_jsonb(l)authoritative_lead,to_jsonb(b)booking,EXISTS(SELECT 1 FROM b)mutation_success FROM i LEFT JOIN b ON true LEFT JOIN l ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event), $execution.id] }}"
+        }
+      },
+      "id": "cbd7c3e2-3af9-4e2f-b2bd-150853629370",
+      "name": "Persist Cancelled State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5008,
+        768
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb e),b AS(UPDATE bookings SET status='completed',updated_at=now()FROM i WHERE external_booking_id=e->>'booking_id'AND lead_id=(e->>'lead_id')::uuid RETURNING bookings.*),l AS(UPDATE leads SET crm_stage='won',next_action='handoff_to_delivery',processing_status='completed',updated_at=now()FROM b WHERE leads.id=b.lead_id RETURNING leads.*),c AS(UPDATE followups SET status='cancelled'FROM b WHERE followups.lead_id=b.lead_id AND(followups.status='scheduled'OR(followups.status='processing'AND EXISTS(SELECT 1 FROM idempotency_keys k WHERE k.key=followups.idempotency_key AND k.status='processing'AND k.expires_at<=now())))RETURNING followups.id),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'lead_converted','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'booking_id',b.id,'event_id',i.e->>'event_id'),now()FROM i,b),fc AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT b.lead_id,'booking_followups_cancelled','WF06_booking_conversion',$2,jsonb_build_object('external_booking_id',b.external_booking_id,'cancelled_count',(SELECT count(*)FROM c),'event_id',i.e->>'event_id'),now()FROM i,b WHERE EXISTS(SELECT 1 FROM c))SELECT i.e booking_event,to_jsonb(l)authoritative_lead,to_jsonb(b)booking,EXISTS(SELECT 1 FROM b)mutation_success,(SELECT count(*)FROM c)cancelled_count FROM i LEFT JOIN b ON true LEFT JOIN l ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking_event), $execution.id] }}"
+        }
+      },
+      "id": "1f17d7b9-c0a8-4ec4-a04a-9b9a182c35f3",
+      "name": "Persist Converted State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5008,
+        928
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i4-c",
+              "leftValue": "={{ $json.mutation_success === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3496cfb7-be7e-4f62-b0bb-df9833d8a376",
+      "name": "Booking Mutation Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5312,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),idem AS(UPDATE idempotency_keys SET status='failed',response_reference='booking_state_conflict'FROM i WHERE key=j#>>'{booking_event,idempotency_key}'AND status='processing'),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT (j#>>'{booking_event,lead_id}')::uuid,'booking_processing_failed','WF06_booking_conversion',$2,jsonb_build_object('event_id',j#>>'{booking_event,event_id}','booking_id',j#>>'{booking_event,booking_id}','event_type',j#>>'{booking_event,event_type}','reason','booking_state_conflict'),now()FROM i)SELECT i.j#>'{booking_event}'booking_event,'booking_state_conflict'failure_reason FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "3727072f-2d1e-46ff-8fe4-deb0eabea61e",
+      "name": "Mark Booking Processing Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5296,
+        992
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$json.booking_event??{};return[{json:{response:{status:'booking_processing_failed',event_type:e.event_type,booking_id:e.booking_id,lead_id:e.lead_id,duplicate:false,reason:$json.failure_reason??'booking_state_conflict'},http_status:409}}];"
+      },
+      "id": "1732f89c-8c05-46b4-b1a5-c088e4980906",
+      "name": "Prepare Booking Failure Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5296,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out=JSON.parse(JSON.stringify($json));const e=out.booking_event;const lead=out.authoritative_lead??{};const booking=out.booking??{};const rep=lead.assigned_sales_rep_id??null;out.notification=rep?{type:'booking_'+e.event_type,sales_rep_id:rep,lead_id:e.lead_id,booking_id:e.booking_id,meeting_at:booking.meeting_at??e.scheduled_at??null,channel:'simulated'}:{type:'notification_skipped',sales_rep_id:null,lead_id:e.lead_id,booking_id:e.booking_id,meeting_at:booking.meeting_at??e.scheduled_at??null,channel:'simulated',reason:'no_assigned_sales_rep'};return[{json:out}];"
+      },
+      "id": "afc57ca3-3bcb-4d25-b9d3-cd68365e4866",
+      "name": "Prepare Sales Rep Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5552,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),ev AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT (j#>>'{booking_event,lead_id}')::uuid,CASE WHEN j#>>'{notification,sales_rep_id}'IS NULL THEN'sales_rep_booking_notification_skipped'ELSE'sales_rep_booking_notification_recorded'END,'WF06_booking_conversion',$2,j->'notification',now()FROM i)SELECT i.j FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "782acf49-f67c-409e-8e80-c8285b14f062",
+      "name": "Persist Sales Rep Notification",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5760,
+        544
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),done AS(UPDATE idempotency_keys SET status='completed',expires_at=NULL,response_reference=COALESCE(j#>>'{booking,id}',j#>>'{booking_event,booking_id}')FROM i WHERE key=j#>>'{booking_event,idempotency_key}'AND status='processing'RETURNING key)SELECT i.j FROM i,done;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.j ?? $json)] }}"
+        }
+      },
+      "id": "95f96149-698b-4c64-aadc-1d970e0151e1",
+      "name": "Complete Booking Event Idempotency",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6000,
+        544
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data=JSON.parse(JSON.stringify($json.j??$json));const e=data.booking_event??{};return[{json:{response:{status:'processed',event_type:e.event_type,booking_id:e.booking_id,lead_id:e.lead_id,duplicate:false},http_status:200}}];"
+      },
+      "id": "358ac39a-ee7b-4a67-807c-4bb133588e05",
+      "name": "Finalize Booking Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6224,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {
+          "responseCode": "={{ $json.http_status }}"
+        }
+      },
+      "id": "b35b2541-d899-4ceb-b222-a197a4856e62",
+      "name": "Respond Booking Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        6432,
+        544
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Booking Event Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Booking Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Booking Event": {
+      "main": [
+        [
+          {
+            "node": "Validate Booking Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Booking Event": {
+      "main": [
+        [
+          {
+            "node": "Booking Event Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Event Valid?": {
+      "main": [
+        [
+          {
+            "node": "Build Booking Idempotency Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Invalid Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Invalid Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Invalid Booking Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Booking Idempotency Key": {
+      "main": [
+        [
+          {
+            "node": "Claim Booking Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Booking Event": {
+      "main": [
+        [
+          {
+            "node": "Event Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Claimed?": {
+      "main": [
+        [
+          {
+            "node": "Load Booking Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Replay Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Replay Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Booking Replay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Booking Context": {
+      "main": [
+        [
+          {
+            "node": "Lead Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Found?": {
+      "main": [
+        [
+          {
+            "node": "Booking Event Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Complete Missing Lead Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Missing Lead Event": {
+      "main": [
+        [
+          {
+            "node": "Prepare Missing Lead Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Missing Lead Result": {
+      "main": [
+        [
+          {
+            "node": "Respond Booking Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Event Switch": {
+      "main": [
+        [
+          {
+            "node": "Persist Booked State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Persist Rescheduled State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Persist Cancelled State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Persist Converted State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Booked State": {
+      "main": [
+        [
+          {
+            "node": "Booking Mutation Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Rescheduled State": {
+      "main": [
+        [
+          {
+            "node": "Booking Mutation Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Cancelled State": {
+      "main": [
+        [
+          {
+            "node": "Booking Mutation Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Converted State": {
+      "main": [
+        [
+          {
+            "node": "Booking Mutation Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Mutation Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sales Rep Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Booking Processing Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Booking Processing Failed": {
+      "main": [
+        [
+          {
+            "node": "Prepare Booking Failure Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Booking Failure Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Booking Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sales Rep Notification": {
+      "main": [
+        [
+          {
+            "node": "Persist Sales Rep Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Sales Rep Notification": {
+      "main": [
+        [
+          {
+            "node": "Complete Booking Event Idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Booking Event Idempotency": {
+      "main": [
+        [
+          {
+            "node": "Finalize Booking Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Booking Result": {
+      "main": [
+        [
+          {
+            "node": "Respond Booking Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8032fb4d-2013-4686-9999-c0412db6b671",
+  "meta": {
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "WqFGln60vAXRDDzp",
+  "tags": []
+}

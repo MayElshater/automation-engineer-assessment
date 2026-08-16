@@ -1,5 +1,5 @@
 {
-  "name": "WF01 - CSV Upload Intake",
+  "name": "WF01 - CSV Lead Import",
   "nodes": [
     {
       "parameters": {
@@ -8,43 +8,48 @@
         "width": 1180,
         "color": 5
       },
-      "id": "8581ab37-59b4-4283-82a4-f1e046622fe8",
+      "id": "60478e72-943e-4381-95ef-5594ef3025bd",
       "name": "Workflow Responsibility",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [1184, 592]
+      "position": [
+        2880,
+        480
+      ]
     },
     {
       "parameters": {
-        "authentication": "none",
         "formTitle": "Manual CSV Upload",
         "formDescription": "Upload a CSV file containing leads for intake and downstream validation.",
         "formFields": {
-          "values": [{
-            "fieldName": "csv_file",
-            "fieldLabel": "Lead CSV File",
-            "fieldType": "file",
-            "multipleFiles": false,
-            "acceptFileTypes": ".csv",
-            "requiredField": true
-          }]
+          "values": [
+            {
+              "fieldLabel": "Lead CSV File",
+              "fieldType": "file",
+              "fieldName": "csv_file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv",
+              "requiredField": true
+            }
+          ]
         },
         "responseMode": "lastNode",
         "options": {
           "buttonLabel": "Upload CSV"
         }
       },
-      "id": "aa5765e8-da10-460d-bf08-d6b13f44d89d",
+      "id": "6448e342-0f4d-46b5-ad34-ac13cda2c4d1",
       "name": "CSV Upload Form",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
-      "position": [1264, 992],
-      "webhookId": "6aa39fbf-b45e-4d45-92e3-c2383df04b3e"
+      "position": [
+        3136,
+        880
+      ],
+      "webhookId": "994e4014-fdda-4ff3-8299-f076ef9f2568"
     },
-
     {
       "parameters": {
-        "operation": "csv",
         "binaryPropertyName": "csv_file",
         "options": {
           "delimiter": ",",
@@ -52,29 +57,36 @@
           "headerRow": true
         }
       },
-      "id": "2fb6c807-84c7-4fe0-969d-5eeaa480ce11",
+      "id": "5392a72e-8517-4988-b4b3-a034fbc18b9d",
       "name": "Extract CSV Rows",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
-      "position": [1744, 992]
+      "position": [
+        3440,
+        880
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());\n  }\n  return false;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    const value = character === 'x' ? random : (random & 0x3) | 0x8;\n    return value.toString(16);\n  });\n};\n\nreturn $input.all().map((item, index) => {\n  const row = item.json;\n  const timestamp = new Date().toISOString();\n\n  return {\n    json: {\n      lead_id: generateUuid(),\n      source: {\n        type: 'csv',\n        external_id: valueOrNull(row.external_id),\n        received_at: timestamp\n      },\n      contact: {\n        name: valueOrNull(row.name),\n        phone_raw: valueOrNull(row.mobile),\n        phone_normalized: null,\n        email_raw: valueOrNull(row.email),\n        email_normalized: null,\n        consent: toBoolean(row.consent)\n      },\n      business: {\n        company_name: valueOrNull(row.company_name),\n        service_interest: valueOrNull(row.service_interest),\n        country: valueOrNull(row.country),\n        industry: null,\n        company_size: null,\n        strategic_account: false\n      },\n      request: {\n        message: valueOrNull(row.message),\n        urgency: 'unknown'\n      },\n      processing: {\n        status: 'processing',\n        retry_count: 0,\n        last_error: null,\n        updated_at: timestamp,\n        current_workflow: 'WF01_csv_import',\n        next_workflow: 'WF02_validation_identity'\n      },\n      metadata: {\n        schema_version: '1.0',\n        workflow_version: '1.0'\n      }\n    },\n    pairedItem: { item: index }\n  };\n});"
+        "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(\n      value.trim().toLowerCase()\n    );\n  }\n\n  return false;\n};\n\nconst toNonNegativeNumberOrNull = (value) => {\n  if (value === undefined || value === null || value === '') return null;\n\n  const number = Number(value);\n\n  if (\n    !Number.isFinite(number) ||\n    !Number.isInteger(number) ||\n    number < 0\n  ) {\n    return null;\n  }\n\n  return number;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) {\n    return globalThis.crypto.randomUUID();\n  }\n\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(\n    /[xy]/g,\n    (character) => {\n      const random = Math.floor(Math.random() * 16);\n      const value =\n        character === 'x'\n          ? random\n          : (random & 0x3) | 0x8;\n\n      return value.toString(16);\n    }\n  );\n};\n\nreturn $input.all().map((item, index) => {\n  const row = item.json;\n  const timestamp = new Date().toISOString();\n\n  return {\n    json: {\n      lead_id: generateUuid(),\n\n      source: {\n        type: 'csv',\n        external_id: valueOrNull(row.external_id),\n        received_at: timestamp\n      },\n\n      contact: {\n        name: valueOrNull(row.name),\n        phone_raw: valueOrNull(row.mobile),\n        phone_normalized: null,\n        email_raw: valueOrNull(row.email),\n        email_normalized: null,\n        consent: toBoolean(row.consent)\n      },\n\n      business: {\n        company_name: valueOrNull(row.company_name),\n        service_interest: valueOrNull(row.service_interest),\n        country: valueOrNull(row.country),\n        industry: valueOrNull(row.industry),\n        company_size: toNonNegativeNumberOrNull(row.company_size),\n\n        // Internal system-controlled field.\n        strategic_account: false\n      },\n\n      request: {\n        message: valueOrNull(row.message),\n        urgency: 'unknown'\n      },\n\n      processing: {\n        status: 'processing',\n        retry_count: 0,\n        last_error: null,\n        updated_at: timestamp,\n        current_workflow: 'WF01_csv_import',\n        next_workflow: 'WF02_validation_identity'\n      },\n\n      metadata: {\n        schema_version: '1.0',\n        workflow_version: '1.0'\n      }\n    },\n\n    pairedItem: {\n      item: index\n    }\n  };\n});"
       },
-      "id": "f4075532-3cd7-424d-aa19-fc1c4ececf4f",
+      "id": "5ad37743-84d3-45be-b33c-4a94c7cea7c0",
       "name": "Normalize CSV Leads",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1984, 992]
+      "position": [
+        3680,
+        880
+      ]
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "WF02_validation_identity",
-          "mode": "id",
-          "cachedResultName": "WF02_validation_identity"
+          "value": "HeoO8LzCz7vlJFyN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HeoO8LzCz7vlJFyN",
+          "cachedResultName": "WF02 - Validation & Identity Resolution"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -89,61 +101,88 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "4fcc4dc8-c1ca-40aa-98ba-2a3013a3d248",
+      "id": "7952e2de-1eb7-4484-bba7-319a56df3967",
       "name": "Execute WF02 - Validation & Identity",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [2240, 992]
+      "position": [
+        3936,
+        880
+      ]
     },
     {
       "parameters": {
         "jsCode": "return [{\n  json: {\n    status: 'completed',\n    source: 'csv',\n    processed_at: new Date().toISOString()\n  }\n}];"
       },
-      "id": "44be57b4-622b-4cbb-8aac-949e5eda9980",
+      "id": "7f109be5-411c-4bc7-8140-482d27ad78a1",
       "name": "CSV Import Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2496, 992]
+      "position": [
+        4192,
+        880
+      ]
     }
   ],
   "pinData": {},
   "connections": {
     "CSV Upload Form": {
-      "main": [[{
-        "node": "Extract CSV Rows",
-        "type": "main",
-        "index": 0
-      }]]
+      "main": [
+        [
+          {
+            "node": "Extract CSV Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract CSV Rows": {
-      "main": [[{
-        "node": "Normalize CSV Leads",
-        "type": "main",
-        "index": 0
-      }]]
+      "main": [
+        [
+          {
+            "node": "Normalize CSV Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Normalize CSV Leads": {
-      "main": [[{
-        "node": "Execute WF02 - Validation & Identity",
-        "type": "main",
-        "index": 0
-      }]]
+      "main": [
+        [
+          {
+            "node": "Execute WF02 - Validation & Identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Execute WF02 - Validation & Identity": {
-      "main": [[{
-        "node": "CSV Import Summary",
-        "type": "main",
-        "index": 0
-      }]]
+      "main": [
+        [
+          {
+            "node": "CSV Import Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "ece386e2-2856-4c2b-b219-bfc473a99be9",
+  "versionId": "fe9881ad-6aaa-4c89-bced-540903301a30",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
   },
+  "nodeGroups": [],
+  "id": "uAva0NnvcjLfUeqr",
   "tags": []
 }

@@ -1,0 +1,125 @@
+[
+  {
+    "lead": {
+      "crm": {
+        "stage": "nurture",
+        "next_action": "start_nurture_sequence"
+      },
+      "source": {
+        "type": "website",
+        "external_id": "evidence-t21-nurture-sequence-init-001",
+        "received_at": "2026-08-15T05:11:26.761+00:00"
+      },
+      "contact": {
+        "name": "T21 Nurture Sequence Lead",
+        "consent": true,
+        "email_raw": "t21.nurture@example.com",
+        "phone_raw": "+201055521021",
+        "email_normalized": "t21.nurture@example.com",
+        "phone_normalized": "+201055521021"
+      },
+      "lead_id": "9f30e2e4-d10a-4327-bd2c-94231983443a",
+      "request": {
+        "message": "We are exploring automation options for our business.",
+        "urgency": "unknown"
+      },
+      "routing": {
+        "route": "nurture",
+        "priority": "medium",
+        "service_category": "CRM Automation",
+        "assignment_reason": "nurture_followup_path",
+        "assigned_sales_rep_id": null
+      },
+      "business": {
+        "country": "Egypt",
+        "industry": "Technology",
+        "company_name": "Delta Systems",
+        "company_size": 240,
+        "service_interest": "CRM Automation",
+        "strategic_account": false
+      },
+      "identity": {
+        "status": "unique",
+        "confidence": 0,
+        "matched_lead_id": null,
+        "identity_conflict": false
+      },
+      "metadata": {
+        "schema_version": "1.0",
+        "workflow_version": "1.0"
+      },
+      "follow_up": {
+        "step": 0,
+        "stopped": false,
+        "sequence": "nurture",
+        "stop_reason": null
+      },
+      "processing": {
+        "status": "processing",
+        "last_error": null,
+        "updated_at": "2026-08-15T05:11:28.497Z",
+        "retry_count": 0,
+        "next_workflow": "WF05_followup_engine",
+        "idempotency_key": "website:evidence-t21-nurture-sequence-init-001",
+        "current_workflow": "WF05_followup_engine"
+      },
+      "data_quality": {
+        "is_complete": true,
+        "missing_fields": [],
+        "validation_status": "valid"
+      },
+      "wf05_handoff": {
+        "reason": "nurture_followup",
+        "required": true
+      },
+      "qualification": {
+        "is_vip": false,
+        "reason": "neutral_ai_signal: deterministic classification nurture preserved.",
+        "ai_reason": "The lead represents a mid-sized technology company with a clear interest in CRM automation, but the stated need is currently at an exploratory stage.",
+        "rule_score": 60,
+        "final_status": "nurture",
+        "ai_confidence": 0.8,
+        "score_breakdown": {
+          "intent": 15,
+          "urgency": 0,
+          "geography": 10,
+          "company_size": 20,
+          "service_value": 15,
+          "strategic_account": 0,
+          "data_quality_penalty": 0
+        },
+        "ai_classification": "medium_potential",
+        "rule_classification": "nurture"
+      },
+      "execution_context": {
+        "entry": "handoff"
+      },
+      "sequence_required": true,
+      "sequence_schedule": {
+        "steps": [
+          {
+            "status": "scheduled",
+            "step_number": 1,
+            "scheduled_at": "2026-08-16T05:11:28.517+00:00",
+            "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:1"
+          },
+          {
+            "status": "scheduled",
+            "step_number": 2,
+            "scheduled_at": "2026-08-18T05:11:28.517+00:00",
+            "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:2"
+          },
+          {
+            "status": "scheduled",
+            "step_number": 3,
+            "scheduled_at": "2026-08-22T05:11:28.517+00:00",
+            "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:3"
+          }
+        ],
+        "sequence_type": "nurture",
+        "sequence_started_at": "2026-08-15T05:11:28.517+00:00"
+      }
+    },
+    "inserted_count": "3"
+  }
+]

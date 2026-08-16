@@ -1,0 +1,96 @@
+[
+  {
+    "crm": {
+      "stage": "qualified",
+      "next_action": "sales_follow_up"
+    },
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t17-overload-fallback-001",
+      "received_at": "2026-08-14T21:19:45.269+00:00"
+    },
+    "contact": {
+      "name": "T17 Sales Fallback Lead",
+      "consent": true,
+      "email_raw": "t17.fallback@example.com",
+      "phone_raw": "+201055517017",
+      "email_normalized": "t17.fallback@example.com",
+      "phone_normalized": "+201055517017"
+    },
+    "lead_id": "e34e7601-f00f-432b-ab3e-d473fac081b9",
+    "request": {
+      "message": "We need an urgent automation implementation proposal this quarter.",
+      "urgency": "unknown"
+    },
+    "routing": {
+      "route": "qualified",
+      "priority": "high",
+      "service_category": "AI Automation",
+      "assignment_reason": "tier_1_service_country_match_lowest_workload",
+      "assigned_sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a",
+      "assignment_context": {
+        "selected_rep_name": "T16 Rep B",
+        "candidate_tier": 1,
+        "current_load": 6,
+        "max_load": 10
+      }
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Technology",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-14T21:19:46.809Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t17-overload-fallback-001",
+      "current_workflow": "WF04_routing_crm"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "qualification": {
+      "is_vip": false,
+      "reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+      "ai_reason": "The lead clearly states an urgent need for an AI automation proposal within the current quarter, comes from a sizable technology company, and expresses explicit service interest.",
+      "rule_score": 85,
+      "final_status": "qualified",
+      "ai_confidence": 0.95,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 15,
+        "geography": 10,
+        "company_size": 20,
+        "service_value": 25,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "ai_classification": "high_potential",
+      "rule_classification": "qualified"
+    },
+    "sales_assignment_context": {
+      "country": "Egypt",
+      "urgency": "unknown",
+      "priority": "high",
+      "service_category": "AI Automation"
+    }
+  }
+]

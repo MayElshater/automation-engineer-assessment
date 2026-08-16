@@ -1,748 +1,778 @@
 {
-    "name":  "WF02 - Validation \u0026 Identity Resolution",
-    "nodes":  [
-                  {
-                      "parameters":  {
-                                         "content":  "## Workflow Responsibility\nNormalizes and validates canonical leads, enforces idempotency, resolves identity, persists state, and hands only valid unique or safely merged leads to WF03. Enrichment, scoring, AI classification, routing, CRM sync, and follow-up are out of scope.",
-                                         "height":  220,
-                                         "width":  1040,
-                                         "color":  5
-                                     },
-                      "id":  "de2a371b-2e56-4dbd-bb3f-d0d65818b819",
-                      "name":  "Workflow Responsibility",
-                      "type":  "n8n-nodes-base.stickyNote",
-                      "typeVersion":  1,
-                      "position":  [
-                                       0,
-                                       0
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "content":  "## Identity Rules\n\n### Candidate Retrieval\n`Find Identity Candidates` retrieves plausible matches using either:\n\n- Exact normalized phone\n- Exact normalized email\n- Same normalized name with the existing lead received within ±2 minutes of the incoming lead\n\nThe ±2-minute retrieval window prevents an unbounded name-based search. Candidate retrieval does not make the final duplicate decision.\n\n### Evaluate Identity Match\nThe downstream deterministic evaluator is the source of truth and classifies each candidate as Exact Duplicate, Likely Duplicate, or Unique.\n\nExact normalized phone OR exact normalized email, without serious conflicting identifiers, is an exact duplicate with confidence 1.0.\n\nWhen no exact contact identifier matches, contextual signals are scored:\n\n- Normalized name match: +0.3\n- Company match: +0.2\n- Different source: +0.1\n- Arrival within 2 minutes: +0.2\n- Same service interest: +0.1\n\nContextual confidence \u003e= 0.6 routes a likely duplicate to Manual Review. Lower confidence is Unique.\n\nExact duplicates are conservatively merged into the existing canonical lead. Incoming duplicate submissions are preserved through `duplicate_decisions` and `lead_events`, not as additional canonical rows in `leads`.",
-                                         "height":  260,
-                                         "width":  1120,
-                                         "color":  4
-                                     },
-                      "id":  "c8e1f150-c63a-498f-a20d-d1248a5d529b",
-                      "name":  "Identity Rules",
-                      "type":  "n8n-nodes-base.stickyNote",
-                      "typeVersion":  1,
-                      "position":  [
-                                       1520,
-                                       0
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "content":  "## Manual Review\nIncomplete, invalid, or ambiguous duplicate leads are never discarded. Their state, decision context, and audit events are stored for data completion or human review. Global retry and dead-letter handling remain the responsibility of WF07.",
-                                         "height":  260,
-                                         "width":  1320,
-                                         "color":  3
-                                     },
-                      "id":  "140d485e-52da-4267-a06c-dde207340dfc",
-                      "name":  "Manual Review Guidance",
-                      "type":  "n8n-nodes-base.stickyNote",
-                      "typeVersion":  1,
-                      "position":  [
-                                       640,
-                                       620
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "inputSource":  "passthrough"
-                                     },
-                      "id":  "9c97ecb1-8440-4cfa-baf8-40b3bf66432f",
-                      "name":  "When Executed by WF01",
-                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
-                      "typeVersion":  1.1,
-                      "position":  [
-                                       80,
-                                       340
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.source = lead.source \u0026\u0026 typeof lead.source === \u0027object\u0027 ? lead.source : {};\nlead.contact = lead.contact \u0026\u0026 typeof lead.contact === \u0027object\u0027 ? lead.contact : {};\nlead.business = lead.business \u0026\u0026 typeof lead.business === \u0027object\u0027 ? lead.business : {};\nlead.request = lead.request \u0026\u0026 typeof lead.request === \u0027object\u0027 ? lead.request : {};\nlead.processing = lead.processing \u0026\u0026 typeof lead.processing === \u0027object\u0027 ? lead.processing : {};\nlead.metadata = lead.metadata \u0026\u0026 typeof lead.metadata === \u0027object\u0027 ? lead.metadata : {};\n\nconst clean = (value) =\u003e value == null || String(value).trim() === \u0027\u0027 ? null : String(value).trim();\nconst normalizePhone = (value) =\u003e {\n  const raw = clean(value);\n  if (!raw) return null;\n  let compact = raw.replace(/[\\s\\-().]/g, \u0027\u0027);\n  if (compact.startsWith(\u002700\u0027)) compact = `+${compact.slice(2)}`;\n  const hadPlus = compact.startsWith(\u0027+\u0027);\n  const digits = compact.replace(/\\D/g, \u0027\u0027);\n  if (!digits) return null;\n  if (/^01\\d{9}$/.test(digits)) return `+20${digits.slice(1)}`;\n  if (/^20\\d{10}$/.test(digits)) return `+${digits}`;\n  if (hadPlus \u0026\u0026 digits.length \u003e= 8 \u0026\u0026 digits.length \u003c= 15) return `+${digits}`;\n  if (digits.length \u003e= 8 \u0026\u0026 digits.length \u003c= 15) return `+${digits}`;\n  return null;\n};\nconst phoneRaw = clean(lead.contact.phone_raw);\nconst emailRaw = clean(lead.contact.email_raw);\nlead.contact.phone_raw = phoneRaw;\nlead.contact.email_raw = emailRaw;\nlead.contact.phone_normalized = normalizePhone(phoneRaw);\nlead.contact.email_normalized = emailRaw ? emailRaw.toLowerCase() : null;\nlead.processing.current_workflow = \u0027WF02_validation_identity\u0027;\nlead.processing.updated_at = new Date().toISOString();\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({\n  lead_id: lead.lead_id ?? null,\n  event_type: \u0027normalized\u0027,\n  workflow_name: \u0027WF02_validation_identity\u0027,\n  execution_id: $execution.id,\n  payload: { phone_present: Boolean(phoneRaw), email_present: Boolean(emailRaw) },\n  created_at: new Date().toISOString()\n});\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "8e70a232-43fa-4008-b78b-52dbe15adee3",
-                      "name":  "Normalize Contact Data",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       340,
-                                       340
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.contact = lead.contact \u0026\u0026 typeof lead.contact === \u0027object\u0027 ? lead.contact : {};\nlead.business = lead.business \u0026\u0026 typeof lead.business === \u0027object\u0027 ? lead.business : {};\nlead.processing = lead.processing \u0026\u0026 typeof lead.processing === \u0027object\u0027 ? lead.processing : {};\nconst missing = [];\nconst invalid = [];\nconst text = (value) =\u003e value == null ? \u0027\u0027 : String(value).trim();\nconst name = text(lead.contact.name);\nconst service = text(lead.business.service_interest);\nconst phone = text(lead.contact.phone_normalized);\nconst email = text(lead.contact.email_normalized);\nconst phoneValid = phone === \u0027\u0027 || /^\\+[1-9]\\d{7,14}$/.test(phone);\nconst emailValid = email === \u0027\u0027 || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\nif (!name) missing.push(\u0027contact.name\u0027);\nif (!phone \u0026\u0026 !email) missing.push(\u0027contact.phone_normalized_or_email_normalized\u0027);\nif (!service) missing.push(\u0027business.service_interest\u0027);\nif (!phoneValid) invalid.push(\u0027contact.phone_normalized\u0027);\nif (!emailValid) invalid.push(\u0027contact.email_normalized\u0027);\nif (lead.contact.consent !== true) invalid.push(\u0027contact.consent\u0027);\nconst validationStatus = invalid.length ? \u0027invalid\u0027 : missing.length ? \u0027incomplete\u0027 : \u0027valid\u0027;\nlead.data_quality = {\n  is_complete: validationStatus === \u0027valid\u0027,\n  missing_fields: [...missing, ...invalid],\n  validation_status: validationStatus\n};\nlead.processing.updated_at = new Date().toISOString();\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nif (validationStatus !== \u0027valid\u0027) {\n  lead.audit_events.push({\n    lead_id: lead.lead_id ?? null,\n    event_type: \u0027validation_failed\u0027,\n    workflow_name: \u0027WF02_validation_identity\u0027,\n    execution_id: $execution.id,\n    payload: { validation_status: validationStatus, fields: lead.data_quality.missing_fields },\n    created_at: new Date().toISOString()\n  });\n} else {\n  lead.audit_events.push({\n    lead_id: lead.lead_id ?? null,\n    event_type: \u0027data_completed\u0027,\n    workflow_name: \u0027WF02_validation_identity\u0027,\n    execution_id: $execution.id,\n    payload: { validation_status: \u0027valid\u0027 },\n    created_at: new Date().toISOString()\n  });\n}\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "0e9e6403-98de-4ceb-88de-b4a89c2f8803",
-                      "name":  "Validate Lead",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       600,
-                                       340
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  true,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "strict",
-                                                                            "version":  2
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "80cb63ee-8b40-4635-9424-554745c80a4b",
-                                                                                   "leftValue":  "={{ $json.data_quality.is_complete === true \u0026\u0026 $json.data_quality.validation_status === \"valid\" }}",
-                                                                                   "rightValue":  true,
-                                                                                   "operator":  {
-                                                                                                    "type":  "boolean",
-                                                                                                    "operation":  "true",
-                                                                                                    "singleValue":  true
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "4f9068d7-152d-49a2-b337-56507d0e5617",
-                      "name":  "Lead Complete?",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2.2,
-                      "position":  [
-                                       860,
-                                       340
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = { ...(lead.processing ?? {}), status: \u0027manual_review\u0027, current_workflow: \u0027WF02_validation_identity\u0027, next_workflow: null, updated_at: new Date().toISOString() };\nlead.qualification = { ...(lead.qualification ?? {}), final_status: \u0027manual_review\u0027 };\nlead.crm = { ...(lead.crm ?? {}), stage: \u0027data_completion\u0027 };\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({ lead_id: lead.lead_id ?? null, event_type: \u0027manual_review_requested\u0027, workflow_name: \u0027WF02_validation_identity\u0027, execution_id: $execution.id, payload: { reason: \u0027incomplete_lead\u0027, data_quality: lead.data_quality }, created_at: new Date().toISOString() });\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "9c474e79-0129-4fa7-a1a2-d4fde7511806",
-                      "name":  "Data Completion State",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       1120,
-                                       620
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,industry,company_size,strategic_account,message,validation_status,identity_status,final_status,crm_stage,processing_status,created_at,updated_at)\n SELECT (j-\u003e\u003e\u0027lead_id\u0027)::uuid,j#\u003e\u003e\u0027{source,type}\u0027,j#\u003e\u003e\u0027{source,external_id}\u0027,COALESCE((j#\u003e\u003e\u0027{source,received_at}\u0027)::timestamptz,now()),j#\u003e\u003e\u0027{contact,name}\u0027,j#\u003e\u003e\u0027{contact,phone_raw}\u0027,j#\u003e\u003e\u0027{contact,phone_normalized}\u0027,j#\u003e\u003e\u0027{contact,email_raw}\u0027,j#\u003e\u003e\u0027{contact,email_normalized}\u0027,COALESCE((j#\u003e\u003e\u0027{contact,consent}\u0027)::boolean,false),j#\u003e\u003e\u0027{business,company_name}\u0027,j#\u003e\u003e\u0027{business,service_interest}\u0027,j#\u003e\u003e\u0027{business,country}\u0027,j#\u003e\u003e\u0027{business,industry}\u0027,NULLIF(j#\u003e\u003e\u0027{business,company_size}\u0027,\u0027\u0027)::integer,COALESCE((j#\u003e\u003e\u0027{business,strategic_account}\u0027)::boolean,false),j#\u003e\u003e\u0027{request,message}\u0027,j#\u003e\u003e\u0027{data_quality,validation_status}\u0027,COALESCE(j#\u003e\u003e\u0027{identity,status}\u0027,\u0027manual_review\u0027),\u0027manual_review\u0027,\u0027data_completion\u0027,\u0027manual_review\u0027,now(),now() FROM input\n ON CONFLICT (id) DO UPDATE SET validation_status=EXCLUDED.validation_status,final_status=\u0027manual_review\u0027,crm_stage=\u0027data_completion\u0027,processing_status=\u0027manual_review\u0027,updated_at=now() RETURNING id\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e-\u003e\u003e\u0027event_type\u0027,\u0027WF02_validation_identity\u0027,e-\u003e\u003e\u0027execution_id\u0027,COALESCE(e-\u003e\u0027payload\u0027,\u0027{}\u0027::jsonb),COALESCE((e-\u003e\u003e\u0027created_at\u0027)::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j-\u003e\u0027audit_events\u0027,\u0027[]\u0027::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "abd5d5a9-86a5-4e81-9b70-44a736b860ac",
-                      "name":  "Save Manual Review State",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       1380,
-                                       620
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = $json.lead ?? $json;\nreturn [{ json: { status: \u0027manual_review\u0027, reason: \u0027incomplete_lead\u0027, lead_id: lead.lead_id ?? null } }];"
-                                     },
-                      "id":  "06718e18-6f36-426c-aa38-45b2a56ae82d",
-                      "name":  "Data Completion / Manual Review",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       1640,
-                                       620
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = lead.processing \u0026\u0026 typeof lead.processing === \u0027object\u0027 ? lead.processing : {};\nconst sourceType = lead.source?.type == null ? null : String(lead.source.type).trim();\nconst externalId = lead.source?.external_id == null ? null : String(lead.source.external_id).trim();\nlead.processing.idempotency_key = sourceType \u0026\u0026 externalId ? `${sourceType}:${externalId}` : `lead:${lead.lead_id}`;\nlead.processing.updated_at = new Date().toISOString();\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "27b9c101-bb2d-4b16-ae0b-9df26ccc456e",
-                      "name":  "Build Idempotency Key",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       1120,
-                                       300
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "SELECT $2::jsonb AS lead,\n EXISTS (SELECT 1 FROM idempotency_keys WHERE key=$1 AND operation=\u0027lead_intake\u0027 AND status=\u0027completed\u0027 AND (expires_at IS NULL OR expires_at\u003enow())) AS operation_exists,\n (SELECT response_reference FROM idempotency_keys WHERE key=$1 AND operation=\u0027lead_intake\u0027 AND status=\u0027completed\u0027 LIMIT 1) AS response_reference;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [$json.processing.idempotency_key, JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "70b1ceba-28bf-4799-842d-7c66232b1408",
-                      "name":  "Check Idempotency Key",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       1380,
-                                       300
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  true,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "strict",
-                                                                            "version":  2
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "965b9ab1-9930-451f-aa15-19c725cb062b",
-                                                                                   "leftValue":  "={{ $json.operation_exists === true }}",
-                                                                                   "rightValue":  true,
-                                                                                   "operator":  {
-                                                                                                    "type":  "boolean",
-                                                                                                    "operation":  "true",
-                                                                                                    "singleValue":  true
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "03b0827b-d37f-4f54-bbde-2eb0cda3c99e",
-                      "name":  "Existing Operation?",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2.2,
-                      "position":  [
-                                       1640,
-                                       300
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = $json.lead ?? {};\nreturn [{ json: { status: \u0027already_processed\u0027, operation: \u0027lead_intake\u0027, lead_id: lead.lead_id ?? null, idempotency_key: lead.processing?.idempotency_key ?? null, response_reference: $json.response_reference ?? null } }];"
-                                     },
-                      "id":  "afb237d0-e078-42ae-9e80-d849ff0a79b7",
-                      "name":  "Idempotent Replay - No Action",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       1900,
-                                       500
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "INSERT INTO idempotency_keys (key,operation,status,created_at,expires_at)\nVALUES ($1,\u0027lead_intake\u0027,\u0027processing\u0027,now(),now()+interval \u002730 days\u0027)\nON CONFLICT (key) DO UPDATE SET status=CASE WHEN idempotency_keys.status=\u0027completed\u0027 THEN idempotency_keys.status ELSE \u0027processing\u0027 END, expires_at=GREATEST(idempotency_keys.expires_at,EXCLUDED.expires_at)\nRETURNING $2::jsonb AS lead;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [$json.lead.processing.idempotency_key, JSON.stringify($json.lead)] }}"
-                                                     }
-                                     },
-                      "id":  "2f40df94-d97b-47ba-b7e8-0da035239c52",
-                      "name":  "Register Idempotency Operation",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       1900,
-                                       260
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "SELECT\n    $6::jsonb AS incoming_lead,\n    COALESCE(\n        jsonb_agg(to_jsonb(l))\n            FILTER (WHERE l.id IS NOT NULL),\n        \u0027[]\u0027::jsonb\n    ) AS candidates\nFROM leads l\nWHERE l.id \u003c\u003e $1::uuid\nAND (\n    (\n        NULLIF($2, \u0027\u0027) IS NOT NULL\n        AND l.phone_normalized = NULLIF($2, \u0027\u0027)\n    )\n    OR\n    (\n        NULLIF($3, \u0027\u0027) IS NOT NULL\n        AND l.email_normalized = NULLIF($3, \u0027\u0027)\n    )\n    OR\n    (\n        NULLIF($4, \u0027\u0027) IS NOT NULL\n        AND lower(trim(l.name)) = lower(trim($4))\n        AND l.received_at BETWEEN\n            (\n                ($6::jsonb #\u003e\u003e \u0027{source,received_at}\u0027)::timestamptz\n                - interval \u00272 minutes\u0027\n            )\n            AND\n            (\n                ($6::jsonb #\u003e\u003e \u0027{source,received_at}\u0027)::timestamptz\n                + interval \u00272 minutes\u0027\n            )\n    )\n);",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [$json.lead_id, $json.contact.phone_normalized ?? \"\", $json.contact.email_normalized ?? \"\", $json.contact.name ?? \"\", $json.business.company_name ?? \"\", JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "c6a06776-b69f-4304-9cb2-b1179fc29a66",
-                      "name":  "Find Identity Candidates",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       2160,
-                                       260
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const incoming = JSON.parse(JSON.stringify($json.incoming_lead ?? {}));\nconst candidates = Array.isArray($json.candidates) ? $json.candidates : [];\nconst norm = (value) =\u003e value == null ? \u0027\u0027 : String(value).trim().toLowerCase().replace(/\\s+/g, \u0027 \u0027);\nconst same = (a, b) =\u003e Boolean(norm(a) \u0026\u0026 norm(a) === norm(b));\nconst differs = (a, b) =\u003e Boolean(norm(a) \u0026\u0026 norm(b) \u0026\u0026 norm(a) !== norm(b));\nconst closeInTime = (a, b) =\u003e {\n  const first = Date.parse(a ?? \u0027\u0027);\n  const second = Date.parse(b ?? \u0027\u0027);\n  return Number.isFinite(first) \u0026\u0026 Number.isFinite(second) \u0026\u0026 Math.abs(first - second) \u003c= 2 * 60 * 1000;\n};\n\nlet best = null;\nfor (const candidate of candidates) {\n  const phoneMatch = same(incoming.contact?.phone_normalized, candidate.phone_normalized);\n  const emailMatch = same(incoming.contact?.email_normalized, candidate.email_normalized);\n  const nameMatch = same(incoming.contact?.name, candidate.name);\n  const companyMatch = same(incoming.business?.company_name, candidate.company_name);\n  const differentSource = Boolean(norm(incoming.source?.type) \u0026\u0026 norm(candidate.source) \u0026\u0026 norm(incoming.source?.type) !== norm(candidate.source));\n  const timeMatch = closeInTime(incoming.source?.received_at, candidate.received_at);\n  const serviceMatch = same(incoming.business?.service_interest, candidate.service_interest);\n  const phoneConflict = differs(incoming.contact?.phone_normalized, candidate.phone_normalized);\n  const emailConflict = differs(incoming.contact?.email_normalized, candidate.email_normalized);\n  const seriousConflict = (phoneMatch \u0026\u0026 emailConflict) || (emailMatch \u0026\u0026 phoneConflict);\n  const exactContactMatch = (phoneMatch || emailMatch) \u0026\u0026 !seriousConflict;\n  const contextualScore =\n    (nameMatch ? 0.3 : 0) +\n    (companyMatch ? 0.2 : 0) +\n    (differentSource ? 0.1 : 0) +\n    (timeMatch ? 0.2 : 0) +\n    (serviceMatch ? 0.1 : 0);\n  const contextualConfidence = Math.min(1, Math.round(contextualScore * 10) / 10);\n  const confidence = exactContactMatch ? 1 : contextualConfidence;\n  const scored = {\n    candidate,\n    confidence,\n    contextualConfidence,\n    phoneMatch,\n    emailMatch,\n    nameMatch,\n    companyMatch,\n    differentSource,\n    timeMatch,\n    serviceMatch,\n    seriousConflict,\n    exactContactMatch\n  };\n  if (!best || Number(scored.exactContactMatch) \u003e Number(best.exactContactMatch) ||\n      (scored.exactContactMatch === best.exactContactMatch \u0026\u0026 scored.confidence \u003e best.confidence)) {\n    best = scored;\n  }\n}\n\nlet status = \u0027unique\u0027;\nif (best?.exactContactMatch) status = \u0027exact_duplicate\u0027;\nelse if (best \u0026\u0026 best.contextualConfidence \u003e= 0.6) status = \u0027likely_duplicate\u0027;\n\nconst reason = !best\n  ? \u0027no_identity_candidate\u0027\n  : `phone=${best.phoneMatch};email=${best.emailMatch};name=${best.nameMatch};company=${best.companyMatch};different_source=${best.differentSource};within_2_minutes=${best.timeMatch};service=${best.serviceMatch};serious_conflict=${best.seriousConflict}`;\n\nincoming.identity = {\n  status,\n  matched_lead_id: best?.candidate?.id ?? null,\n  confidence: best?.confidence ?? 0\n};\nincoming.processing = { ...(incoming.processing ?? {}), updated_at: new Date().toISOString() };\nincoming.audit_events = Array.isArray(incoming.audit_events) ? incoming.audit_events : [];\nif (status !== \u0027unique\u0027) incoming.audit_events.push({\n  lead_id: incoming.lead_id ?? null,\n  event_type: \u0027duplicate_detected\u0027,\n  workflow_name: \u0027WF02_validation_identity\u0027,\n  execution_id: $execution.id,\n  payload: { status, confidence: incoming.identity.confidence, matched_lead_id: incoming.identity.matched_lead_id, reason },\n  created_at: new Date().toISOString()\n});\n\nif (status === \u0027exact_duplicate\u0027 \u0026\u0026 best) {\n  const candidateLeadId = incoming.lead_id;\n  const existing = best.candidate;\n  const prefer = (current, fallback) =\u003e current !== null \u0026\u0026 current !== undefined \u0026\u0026 current !== \u0027\u0027 ? current : fallback;\n  incoming.lead_id = existing.id;\n  incoming.source = {\n    type: prefer(existing.source, incoming.source?.type),\n    external_id: prefer(existing.external_source_id, incoming.source?.external_id),\n    received_at: prefer(existing.received_at, incoming.source?.received_at)\n  };\n  incoming.contact = {\n    ...incoming.contact,\n    name: prefer(existing.name, incoming.contact?.name),\n    phone_raw: prefer(existing.phone_raw, incoming.contact?.phone_raw),\n    phone_normalized: prefer(existing.phone_normalized, incoming.contact?.phone_normalized),\n    email_raw: prefer(existing.email_raw, incoming.contact?.email_raw),\n    email_normalized: prefer(existing.email_normalized, incoming.contact?.email_normalized),\n    consent: existing.consent === true || incoming.contact?.consent === true\n  };\n  incoming.business = {\n    ...incoming.business,\n    company_name: prefer(existing.company_name, incoming.business?.company_name),\n    service_interest: prefer(existing.service_interest, incoming.business?.service_interest),\n    country: prefer(existing.country, incoming.business?.country),\n    industry: prefer(existing.industry, incoming.business?.industry),\n    company_size: prefer(existing.company_size, incoming.business?.company_size),\n    strategic_account: existing.strategic_account === true || incoming.business?.strategic_account === true\n  };\n  incoming.request = { ...incoming.request, message: prefer(existing.message, incoming.request?.message) };\n  incoming.identity = { status: \u0027exact_duplicate\u0027, matched_lead_id: existing.id, confidence: 1 };\n  incoming.duplicate_decision = {\n    candidate_lead_id: candidateLeadId,\n    matched_lead_id: existing.id,\n    match_type: best.phoneMatch \u0026\u0026 best.emailMatch ? \u0027exact_phone_and_email\u0027 : best.phoneMatch ? \u0027exact_phone\u0027 : \u0027exact_email\u0027,\n    confidence: 1,\n    decision: \u0027merge_missing_fields\u0027,\n    reason,\n    created_at: new Date().toISOString()\n  };\n}\n\nif (status === \u0027likely_duplicate\u0027 \u0026\u0026 best) incoming.duplicate_decision = {\n  candidate_lead_id: incoming.lead_id,\n  matched_lead_id: best.candidate.id,\n  match_type: \u0027likely_identity\u0027,\n  confidence: best.contextualConfidence,\n  decision: \u0027manual_review\u0027,\n  reason,\n  created_at: new Date().toISOString()\n};\nreturn [{ json: incoming }];"
-                                     },
-                      "id":  "201d6d47-ec73-47d4-977d-6385d0e0eed0",
-                      "name":  "Evaluate Identity Match",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       2420,
-                                       260
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  true,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "strict",
-                                                                            "version":  2
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "f74dafde-bc34-4e12-8f30-09d1bf36af98",
-                                                                                   "leftValue":  "={{ $json.identity.status === \"exact_duplicate\" }}",
-                                                                                   "rightValue":  true,
-                                                                                   "operator":  {
-                                                                                                    "type":  "boolean",
-                                                                                                    "operation":  "true",
-                                                                                                    "singleValue":  true
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "c551a3f6-3419-4fa0-9de0-a5c627088bea",
-                      "name":  "Exact Duplicate?",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2.2,
-                      "position":  [
-                                       2680,
-                                       260
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "conditions":  {
-                                                            "options":  {
-                                                                            "caseSensitive":  true,
-                                                                            "leftValue":  "",
-                                                                            "typeValidation":  "strict",
-                                                                            "version":  2
-                                                                        },
-                                                            "conditions":  [
-                                                                               {
-                                                                                   "id":  "cb8c2c1c-4b82-4bfe-a0dd-2f54ece36ecb",
-                                                                                   "leftValue":  "={{ $json.identity.status === \"likely_duplicate\" }}",
-                                                                                   "rightValue":  true,
-                                                                                   "operator":  {
-                                                                                                    "type":  "boolean",
-                                                                                                    "operation":  "true",
-                                                                                                    "singleValue":  true
-                                                                                                }
-                                                                               }
-                                                                           ],
-                                                            "combinator":  "and"
-                                                        },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "2a03c06f-062d-4bd8-86a6-e25d6e328a07",
-                      "name":  "Likely Duplicate?",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2.2,
-                      "position":  [
-                                       2940,
-                                       460
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,industry,company_size,strategic_account,message,validation_status,identity_status,processing_status,created_at,updated_at)\n SELECT (j-\u003e\u003e\u0027lead_id\u0027)::uuid,j#\u003e\u003e\u0027{source,type}\u0027,j#\u003e\u003e\u0027{source,external_id}\u0027,COALESCE((j#\u003e\u003e\u0027{source,received_at}\u0027)::timestamptz,now()),j#\u003e\u003e\u0027{contact,name}\u0027,j#\u003e\u003e\u0027{contact,phone_raw}\u0027,j#\u003e\u003e\u0027{contact,phone_normalized}\u0027,j#\u003e\u003e\u0027{contact,email_raw}\u0027,j#\u003e\u003e\u0027{contact,email_normalized}\u0027,COALESCE((j#\u003e\u003e\u0027{contact,consent}\u0027)::boolean,false),j#\u003e\u003e\u0027{business,company_name}\u0027,j#\u003e\u003e\u0027{business,service_interest}\u0027,j#\u003e\u003e\u0027{business,country}\u0027,j#\u003e\u003e\u0027{business,industry}\u0027,NULLIF(j#\u003e\u003e\u0027{business,company_size}\u0027,\u0027\u0027)::integer,COALESCE((j#\u003e\u003e\u0027{business,strategic_account}\u0027)::boolean,false),j#\u003e\u003e\u0027{request,message}\u0027,\u0027valid\u0027,\u0027unique\u0027,\u0027processing\u0027,now(),now() FROM input\n ON CONFLICT (id) DO UPDATE SET phone_normalized=EXCLUDED.phone_normalized,email_normalized=EXCLUDED.email_normalized,validation_status=\u0027valid\u0027,identity_status=\u0027unique\u0027,updated_at=now() RETURNING id\n), idem AS (\n UPDATE idempotency_keys SET lead_id=saved.id,status=\u0027completed\u0027,response_reference=saved.id::text FROM saved,input WHERE key=input.j#\u003e\u003e\u0027{processing,idempotency_key}\u0027\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e-\u003e\u003e\u0027event_type\u0027,\u0027WF02_validation_identity\u0027,e-\u003e\u003e\u0027execution_id\u0027,COALESCE(e-\u003e\u0027payload\u0027,\u0027{}\u0027::jsonb),COALESCE((e-\u003e\u003e\u0027created_at\u0027)::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j-\u003e\u0027audit_events\u0027,\u0027[]\u0027::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "3a9a39bd-b04d-46d4-b18a-a9d0b88e8efb",
-                      "name":  "Save Unique Lead State",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       3200,
-                                       200
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "WITH input AS (SELECT $1::jsonb AS j),\nmerged AS (\n UPDATE leads SET\n  name=COALESCE(leads.name,input.j#\u003e\u003e\u0027{contact,name}\u0027),\n  phone_raw=COALESCE(leads.phone_raw,input.j#\u003e\u003e\u0027{contact,phone_raw}\u0027),\n  phone_normalized=COALESCE(leads.phone_normalized,input.j#\u003e\u003e\u0027{contact,phone_normalized}\u0027),\n  email_raw=COALESCE(leads.email_raw,input.j#\u003e\u003e\u0027{contact,email_raw}\u0027),\n  email_normalized=COALESCE(leads.email_normalized,input.j#\u003e\u003e\u0027{contact,email_normalized}\u0027),\n  company_name=COALESCE(leads.company_name,input.j#\u003e\u003e\u0027{business,company_name}\u0027),\n  service_interest=COALESCE(leads.service_interest,input.j#\u003e\u003e\u0027{business,service_interest}\u0027),\n  country=COALESCE(leads.country,input.j#\u003e\u003e\u0027{business,country}\u0027),\n  industry=COALESCE(leads.industry,input.j#\u003e\u003e\u0027{business,industry}\u0027),\n  company_size=COALESCE(leads.company_size,NULLIF(input.j#\u003e\u003e\u0027{business,company_size}\u0027,\u0027\u0027)::integer),\n  message=COALESCE(leads.message,input.j#\u003e\u003e\u0027{request,message}\u0027),\n  consent=leads.consent OR COALESCE((input.j#\u003e\u003e\u0027{contact,consent}\u0027)::boolean,false),\n  strategic_account=leads.strategic_account OR COALESCE((input.j#\u003e\u003e\u0027{business,strategic_account}\u0027)::boolean,false),\n  identity_status=\u0027exact_duplicate\u0027,\n  updated_at=now()\n FROM input\n WHERE leads.id=(input.j#\u003e\u003e\u0027{identity,matched_lead_id}\u0027)::uuid\n RETURNING leads.id\n), decision AS (\n INSERT INTO duplicate_decisions (candidate_lead_id,matched_lead_id,match_type,confidence,decision,reason,created_at)\n SELECT\n  (j#\u003e\u003e\u0027{duplicate_decision,candidate_lead_id}\u0027)::uuid,\n  merged.id,\n  j#\u003e\u003e\u0027{duplicate_decision,match_type}\u0027,\n  (j#\u003e\u003e\u0027{duplicate_decision,confidence}\u0027)::numeric,\n  j#\u003e\u003e\u0027{duplicate_decision,decision}\u0027,\n  j#\u003e\u003e\u0027{duplicate_decision,reason}\u0027,\n  COALESCE((j#\u003e\u003e\u0027{duplicate_decision,created_at}\u0027)::timestamptz,now())\n FROM input,merged\n), idem AS (\n UPDATE idempotency_keys\n SET lead_id=merged.id,status=\u0027completed\u0027,response_reference=merged.id::text\n FROM merged,input\n WHERE key=input.j#\u003e\u003e\u0027{processing,idempotency_key}\u0027\n), history AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT merged.id,e-\u003e\u003e\u0027event_type\u0027,\u0027WF02_validation_identity\u0027,e-\u003e\u003e\u0027execution_id\u0027,COALESCE(e-\u003e\u0027payload\u0027,\u0027{}\u0027::jsonb),COALESCE((e-\u003e\u003e\u0027created_at\u0027)::timestamptz,now())\n FROM merged,input,LATERAL jsonb_array_elements(COALESCE(input.j-\u003e\u0027audit_events\u0027,\u0027[]\u0027::jsonb)) e\n), merged_event AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT merged.id,\u0027duplicate_merged\u0027,\u0027WF02_validation_identity\u0027,NULL,\n  jsonb_build_object(\n   \u0027candidate_lead_id\u0027,input.j#\u003e\u003e\u0027{duplicate_decision,candidate_lead_id}\u0027,\n   \u0027matched_lead_id\u0027,merged.id,\n   \u0027match_type\u0027,input.j#\u003e\u003e\u0027{duplicate_decision,match_type}\u0027,\n   \u0027confidence\u0027,input.j#\u003e\u003e\u0027{duplicate_decision,confidence}\u0027\n  ),now()\n FROM merged,input\n)\nSELECT input.j AS lead FROM input;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "6f33ac2f-e721-4030-8175-4a72a3c9f089",
-                      "name":  "Save Exact Duplicate Merge",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       2940,
-                                       80
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = { ...(lead.processing ?? {}), status: \u0027manual_review\u0027, current_workflow: \u0027WF02_validation_identity\u0027, next_workflow: null, updated_at: new Date().toISOString() };\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({ lead_id: lead.lead_id ?? null, event_type: \u0027manual_review_requested\u0027, workflow_name: \u0027WF02_validation_identity\u0027, execution_id: $execution.id, payload: { reason: \u0027likely_duplicate\u0027, duplicate_decision: lead.duplicate_decision }, created_at: new Date().toISOString() });\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "c9b9fad7-4f6b-4548-a98a-9b832748455d",
-                      "name":  "Prepare Duplicate Manual Review",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       3200,
-                                       500
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "executeQuery",
-                                         "query":  "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,strategic_account,message,validation_status,identity_status,final_status,processing_status,created_at,updated_at)\n SELECT (j-\u003e\u003e\u0027lead_id\u0027)::uuid,j#\u003e\u003e\u0027{source,type}\u0027,j#\u003e\u003e\u0027{source,external_id}\u0027,COALESCE((j#\u003e\u003e\u0027{source,received_at}\u0027)::timestamptz,now()),j#\u003e\u003e\u0027{contact,name}\u0027,j#\u003e\u003e\u0027{contact,phone_raw}\u0027,j#\u003e\u003e\u0027{contact,phone_normalized}\u0027,j#\u003e\u003e\u0027{contact,email_raw}\u0027,j#\u003e\u003e\u0027{contact,email_normalized}\u0027,COALESCE((j#\u003e\u003e\u0027{contact,consent}\u0027)::boolean,false),j#\u003e\u003e\u0027{business,company_name}\u0027,j#\u003e\u003e\u0027{business,service_interest}\u0027,j#\u003e\u003e\u0027{business,country}\u0027,COALESCE((j#\u003e\u003e\u0027{business,strategic_account}\u0027)::boolean,false),j#\u003e\u003e\u0027{request,message}\u0027,\u0027valid\u0027,\u0027likely_duplicate\u0027,\u0027manual_review\u0027,\u0027manual_review\u0027,now(),now() FROM input ON CONFLICT (id) DO UPDATE SET identity_status=\u0027likely_duplicate\u0027,final_status=\u0027manual_review\u0027,processing_status=\u0027manual_review\u0027,updated_at=now() RETURNING id\n), decision AS (\n INSERT INTO duplicate_decisions (candidate_lead_id,matched_lead_id,match_type,confidence,decision,reason,created_at)\n SELECT saved.id,(j#\u003e\u003e\u0027{duplicate_decision,matched_lead_id}\u0027)::uuid,j#\u003e\u003e\u0027{duplicate_decision,match_type}\u0027,(j#\u003e\u003e\u0027{duplicate_decision,confidence}\u0027)::numeric,\u0027manual_review\u0027,j#\u003e\u003e\u0027{duplicate_decision,reason}\u0027,now() FROM input,saved\n), idem AS (\n UPDATE idempotency_keys SET lead_id=saved.id,status=\u0027completed\u0027,response_reference=saved.id::text FROM saved,input WHERE key=input.j#\u003e\u003e\u0027{processing,idempotency_key}\u0027\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e-\u003e\u003e\u0027event_type\u0027,\u0027WF02_validation_identity\u0027,e-\u003e\u003e\u0027execution_id\u0027,COALESCE(e-\u003e\u0027payload\u0027,\u0027{}\u0027::jsonb),COALESCE((e-\u003e\u003e\u0027created_at\u0027)::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j-\u003e\u0027audit_events\u0027,\u0027[]\u0027::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
-                                         "options":  {
-                                                         "queryReplacement":  "={{ [JSON.stringify($json)] }}"
-                                                     }
-                                     },
-                      "id":  "2a61b702-25ca-4d51-aab7-f9556923edba",
-                      "name":  "Save Duplicate Review State",
-                      "type":  "n8n-nodes-base.postgres",
-                      "typeVersion":  2.6,
-                      "position":  [
-                                       3460,
-                                       500
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = $json.lead ?? $json;\nreturn [{ json: { status: \u0027manual_review\u0027, reason: \u0027likely_duplicate\u0027, lead_id: lead.lead_id ?? null, matched_lead_id: lead.identity?.matched_lead_id ?? null, confidence: lead.identity?.confidence ?? 0 } }];"
-                                     },
-                      "id":  "c8ff3a77-fc10-4f16-9d6d-a3e0c8996cc0",
-                      "name":  "Duplicate Manual Review",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       3720,
-                                       500
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const lead = JSON.parse(JSON.stringify($json.lead ?? $json ?? {}));\ndelete lead.audit_events;\ndelete lead.duplicate_decision;\ndelete lead.candidate_snapshot;\nlead.processing = { ...(lead.processing ?? {}), status: \u0027processing\u0027, current_workflow: \u0027WF02_validation_identity\u0027, next_workflow: \u0027WF03_enrichment_qualification\u0027, updated_at: new Date().toISOString() };\nreturn [{ json: lead }];"
-                                     },
-                      "id":  "a31a4666-3473-4e84-bbd2-9510d370eabb",
-                      "name":  "Prepare WF03 Handoff",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       3460,
-                                       180
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "workflowId":  {
-                                                            "__rl":  true,
-                                                            "value":  "WF03_enrichment_qualification",
-                                                            "mode":  "id",
-                                                            "cachedResultName":  "WF03_enrichment_qualification"
-                                                        },
-                                         "workflowInputs":  {
-                                                                "mappingMode":  "defineBelow",
-                                                                "value":  {
-
-                                                                          },
-                                                                "matchingColumns":  [
-
-                                                                                    ],
-                                                                "schema":  [
-
-                                                                           ],
-                                                                "attemptToConvertTypes":  false,
-                                                                "convertFieldsToString":  false
-                                                            },
-                                         "mode":  "each",
-                                         "options":  {
-                                                         "waitForSubWorkflow":  true
-                                                     }
-                                     },
-                      "id":  "9a80bb02-1b1e-42d4-8bf0-424b95c37c5f",
-                      "name":  "Execute WF03 - Enrichment \u0026 Qualification",
-                      "type":  "n8n-nodes-base.executeWorkflow",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       3720,
-                                       180
-                                   ]
-                  }
-              ],
-    "pinData":  {
-
-                },
-    "connections":  {
-                        "When Executed by WF01":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Normalize Contact Data",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "Normalize Contact Data":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Validate Lead",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "Validate Lead":  {
-                                              "main":  [
-                                                           [
-                                                               {
-                                                                   "node":  "Lead Complete?",
-                                                                   "type":  "main",
-                                                                   "index":  0
-                                                               }
-                                                           ]
-                                                       ]
-                                          },
-                        "Lead Complete?":  {
-                                               "main":  [
-                                                            [
-                                                                {
-                                                                    "node":  "Build Idempotency Key",
-                                                                    "type":  "main",
-                                                                    "index":  0
-                                                                }
-                                                            ],
-                                                            [
-                                                                {
-                                                                    "node":  "Data Completion State",
-                                                                    "type":  "main",
-                                                                    "index":  0
-                                                                }
-                                                            ]
-                                                        ]
-                                           },
-                        "Data Completion State":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Save Manual Review State",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "Save Manual Review State":  {
-                                                         "main":  [
-                                                                      [
-                                                                          {
-                                                                              "node":  "Data Completion / Manual Review",
-                                                                              "type":  "main",
-                                                                              "index":  0
-                                                                          }
-                                                                      ]
-                                                                  ]
-                                                     },
-                        "Build Idempotency Key":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Check Idempotency Key",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "Check Idempotency Key":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Existing Operation?",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
-                        "Existing Operation?":  {
-                                                    "main":  [
-                                                                 [
-                                                                     {
-                                                                         "node":  "Idempotent Replay - No Action",
-                                                                         "type":  "main",
-                                                                         "index":  0
-                                                                     }
-                                                                 ],
-                                                                 [
-                                                                     {
-                                                                         "node":  "Register Idempotency Operation",
-                                                                         "type":  "main",
-                                                                         "index":  0
-                                                                     }
-                                                                 ]
-                                                             ]
-                                                },
-                        "Register Idempotency Operation":  {
-                                                               "main":  [
-                                                                            [
-                                                                                {
-                                                                                    "node":  "Find Identity Candidates",
-                                                                                    "type":  "main",
-                                                                                    "index":  0
-                                                                                }
-                                                                            ]
-                                                                        ]
-                                                           },
-                        "Evaluate Identity Match":  {
-                                                        "main":  [
-                                                                     [
-                                                                         {
-                                                                             "node":  "Exact Duplicate?",
-                                                                             "type":  "main",
-                                                                             "index":  0
-                                                                         }
-                                                                     ]
-                                                                 ]
-                                                    },
-                        "Exact Duplicate?":  {
-                                                 "main":  [
-                                                              [
-                                                                  {
-                                                                      "node":  "Save Exact Duplicate Merge",
-                                                                      "type":  "main",
-                                                                      "index":  0
-                                                                  }
-                                                              ],
-                                                              [
-                                                                  {
-                                                                      "node":  "Likely Duplicate?",
-                                                                      "type":  "main",
-                                                                      "index":  0
-                                                                  }
-                                                              ]
-                                                          ]
-                                             },
-                        "Likely Duplicate?":  {
-                                                  "main":  [
-                                                               [
-                                                                   {
-                                                                       "node":  "Prepare Duplicate Manual Review",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ],
-                                                               [
-                                                                   {
-                                                                       "node":  "Save Unique Lead State",
-                                                                       "type":  "main",
-                                                                       "index":  0
-                                                                   }
-                                                               ]
-                                                           ]
-                                              },
-                        "Prepare Duplicate Manual Review":  {
-                                                                "main":  [
-                                                                             [
-                                                                                 {
-                                                                                     "node":  "Save Duplicate Review State",
-                                                                                     "type":  "main",
-                                                                                     "index":  0
-                                                                                 }
-                                                                             ]
-                                                                         ]
-                                                            },
-                        "Save Duplicate Review State":  {
-                                                            "main":  [
-                                                                         [
-                                                                             {
-                                                                                 "node":  "Duplicate Manual Review",
-                                                                                 "type":  "main",
-                                                                                 "index":  0
-                                                                             }
-                                                                         ]
-                                                                     ]
-                                                        },
-                        "Save Unique Lead State":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Prepare WF03 Handoff",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "Save Exact Duplicate Merge":  {
-                                                           "main":  [
-                                                                        [
-                                                                            {
-                                                                                "node":  "Prepare WF03 Handoff",
-                                                                                "type":  "main",
-                                                                                "index":  0
-                                                                            }
-                                                                        ]
-                                                                    ]
-                                                       },
-                        "Prepare WF03 Handoff":  {
-                                                     "main":  [
-                                                                  [
-                                                                      {
-                                                                          "node":  "Execute WF03 - Enrichment \u0026 Qualification",
-                                                                          "type":  "main",
-                                                                          "index":  0
-                                                                      }
-                                                                  ]
-                                                              ]
-                                                 },
-                        "Find Identity Candidates":  {
-                                                         "main":  [
-                                                                      [
-                                                                          {
-                                                                              "node":  "Evaluate Identity Match",
-                                                                              "type":  "main",
-                                                                              "index":  0
-                                                                          }
-                                                                      ]
-                                                                  ]
-                                                     }
-                    },
-    "active":  false,
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "versionId":  "c0fd3bcc-6013-44fe-a00f-b48ad9fa1466",
-    "meta":  {
-                 "templateCredsSetupCompleted":  false
-             },
-    "tags":  [
-
-             ]
+  "name": "WF02 - Validation & Identity Resolution",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Workflow Responsibility\nNormalizes and validates canonical leads, enforces idempotency, resolves identity, persists state, and hands only valid unique or safely merged leads to WF03. Enrichment, scoring, AI classification, routing, CRM sync, and follow-up are out of scope.",
+        "height": 220,
+        "width": 1040,
+        "color": 5
+      },
+      "id": "0e6e3ce3-5c15-4a90-b4d3-af793c4a6a9a",
+      "name": "Workflow Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        9856,
+        3408
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Identity Rules\n\n### Candidate Retrieval\n`Find Identity Candidates` retrieves plausible matches using either:\n\n- Exact normalized phone\n- Exact normalized email\n- Same normalized name with the existing lead received within ±2 minutes of the incoming lead\n\nThe ±2-minute retrieval window prevents an unbounded name-based search. Candidate retrieval does not make the final duplicate decision.\n\n### Evaluate Identity Match\nThe downstream deterministic evaluator is the source of truth and classifies each candidate as Exact Duplicate, Likely Duplicate, or Unique.\n\nExact normalized phone OR exact normalized email, without serious conflicting identifiers, is an exact duplicate with confidence 1.0.\n\nWhen no exact contact identifier matches, contextual signals are scored:\n\n- Normalized name match: +0.3\n- Company match: +0.2\n- Different source: +0.1\n- Arrival within 2 minutes: +0.2\n- Same service interest: +0.1\n\nContextual confidence >= 0.6 routes a likely duplicate to Manual Review. Lower confidence is Unique.\n\nExact duplicates are conservatively merged into the existing canonical lead. Incoming duplicate submissions are preserved through `duplicate_decisions` and `lead_events`, not as additional canonical rows in `leads`.",
+        "height": 260,
+        "width": 1120,
+        "color": 4
+      },
+      "id": "ca3572f4-9077-46ff-9ae8-ffbe8930cc3c",
+      "name": "Identity Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        11376,
+        3408
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Manual Review\nIncomplete, invalid, or ambiguous duplicate leads are never discarded. Their state, decision context, and audit events are stored for data completion or human review. Global retry and dead-letter handling remain the responsibility of WF07.",
+        "height": 260,
+        "width": 1320,
+        "color": 3
+      },
+      "id": "4bfc91af-93e8-4ded-bc00-316e56c159d8",
+      "name": "Manual Review Guidance",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        10480,
+        4144
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "266632d5-514f-4177-a268-64656107aa1c",
+      "name": "When Executed by WF01",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        9936,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.source = lead.source && typeof lead.source === 'object' ? lead.source : {};\nlead.contact = lead.contact && typeof lead.contact === 'object' ? lead.contact : {};\nlead.business = lead.business && typeof lead.business === 'object' ? lead.business : {};\nlead.request = lead.request && typeof lead.request === 'object' ? lead.request : {};\nlead.processing = lead.processing && typeof lead.processing === 'object' ? lead.processing : {};\nlead.metadata = lead.metadata && typeof lead.metadata === 'object' ? lead.metadata : {};\n\nconst clean = (value) => value == null || String(value).trim() === '' ? null : String(value).trim();\nconst normalizePhone = (value) => {\n  const raw = clean(value);\n  if (!raw) return null;\n  let compact = raw.replace(/[\\s\\-().]/g, '');\n  if (compact.startsWith('00')) compact = `+${compact.slice(2)}`;\n  const hadPlus = compact.startsWith('+');\n  const digits = compact.replace(/\\D/g, '');\n  if (!digits) return null;\n  if (/^01\\d{9}$/.test(digits)) return `+20${digits.slice(1)}`;\n  if (/^20\\d{10}$/.test(digits)) return `+${digits}`;\n  if (hadPlus && digits.length >= 8 && digits.length <= 15) return `+${digits}`;\n  if (digits.length >= 8 && digits.length <= 15) return `+${digits}`;\n  return null;\n};\nconst phoneRaw = clean(lead.contact.phone_raw);\nconst emailRaw = clean(lead.contact.email_raw);\nlead.contact.phone_raw = phoneRaw;\nlead.contact.email_raw = emailRaw;\nlead.contact.phone_normalized = normalizePhone(phoneRaw);\nlead.contact.email_normalized = emailRaw ? emailRaw.toLowerCase() : null;\nlead.processing.current_workflow = 'WF02_validation_identity';\nlead.processing.updated_at = new Date().toISOString();\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({\n  lead_id: lead.lead_id ?? null,\n  event_type: 'normalized',\n  workflow_name: 'WF02_validation_identity',\n  execution_id: $execution.id,\n  payload: { phone_present: Boolean(phoneRaw), email_present: Boolean(emailRaw) },\n  created_at: new Date().toISOString()\n});\nreturn [{ json: lead }];"
+      },
+      "id": "d7f45a66-ff0f-48f7-9f5c-9e0ccae05680",
+      "name": "Normalize Contact Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10208,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.contact = lead.contact && typeof lead.contact === 'object' ? lead.contact : {};\nlead.business = lead.business && typeof lead.business === 'object' ? lead.business : {};\nlead.processing = lead.processing && typeof lead.processing === 'object' ? lead.processing : {};\nconst missing = [];\nconst invalid = [];\nconst text = (value) => value == null ? '' : String(value).trim();\nconst name = text(lead.contact.name);\nconst service = text(lead.business.service_interest);\nconst phone = text(lead.contact.phone_normalized);\nconst email = text(lead.contact.email_normalized);\nconst phoneValid = phone === '' || /^\\+[1-9]\\d{7,14}$/.test(phone);\nconst emailValid = email === '' || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\nif (!name) missing.push('contact.name');\nif (!phone && !email) missing.push('contact.phone_normalized_or_email_normalized');\nif (!service) missing.push('business.service_interest');\nif (!phoneValid) invalid.push('contact.phone_normalized');\nif (!emailValid) invalid.push('contact.email_normalized');\nif (lead.contact.consent !== true) invalid.push('contact.consent');\nconst validationStatus = invalid.length ? 'invalid' : missing.length ? 'incomplete' : 'valid';\nlead.data_quality = {\n  is_complete: validationStatus === 'valid',\n  missing_fields: [...missing, ...invalid],\n  validation_status: validationStatus\n};\nlead.processing.updated_at = new Date().toISOString();\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nif (validationStatus !== 'valid') {\n  lead.audit_events.push({\n    lead_id: lead.lead_id ?? null,\n    event_type: 'validation_failed',\n    workflow_name: 'WF02_validation_identity',\n    execution_id: $execution.id,\n    payload: { validation_status: validationStatus, fields: lead.data_quality.missing_fields },\n    created_at: new Date().toISOString()\n  });\n} else {\n  lead.audit_events.push({\n    lead_id: lead.lead_id ?? null,\n    event_type: 'data_completed',\n    workflow_name: 'WF02_validation_identity',\n    execution_id: $execution.id,\n    payload: { validation_status: 'valid' },\n    created_at: new Date().toISOString()\n  });\n}\nreturn [{ json: lead }];"
+      },
+      "id": "0536c40e-9397-4525-a2f8-39c61fb43b52",
+      "name": "Validate Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10464,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "80cb63ee-8b40-4635-9424-554745c80a4b",
+              "leftValue": "={{ $json.data_quality.is_complete === true && $json.data_quality.validation_status === \"valid\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3e23ca77-5099-4e97-9793-e4f084f781e2",
+      "name": "Lead Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        10720,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = { ...(lead.processing ?? {}), status: 'manual_review', current_workflow: 'WF02_validation_identity', next_workflow: null, updated_at: new Date().toISOString() };\nlead.qualification = { ...(lead.qualification ?? {}), final_status: 'manual_review' };\nlead.crm = { ...(lead.crm ?? {}), stage: 'data_completion' };\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({ lead_id: lead.lead_id ?? null, event_type: 'manual_review_requested', workflow_name: 'WF02_validation_identity', execution_id: $execution.id, payload: { reason: 'incomplete_lead', data_quality: lead.data_quality }, created_at: new Date().toISOString() });\nreturn [{ json: lead }];"
+      },
+      "id": "d985e0cd-d8f6-4f3a-ab7b-007e0d740541",
+      "name": "Data Completion State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10976,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,industry,company_size,strategic_account,message,validation_status,identity_status,final_status,crm_stage,processing_status,created_at,updated_at)\n SELECT (j->>'lead_id')::uuid,j#>>'{source,type}',j#>>'{source,external_id}',COALESCE((j#>>'{source,received_at}')::timestamptz,now()),j#>>'{contact,name}',j#>>'{contact,phone_raw}',j#>>'{contact,phone_normalized}',j#>>'{contact,email_raw}',j#>>'{contact,email_normalized}',COALESCE((j#>>'{contact,consent}')::boolean,false),j#>>'{business,company_name}',j#>>'{business,service_interest}',j#>>'{business,country}',j#>>'{business,industry}',NULLIF(j#>>'{business,company_size}','')::integer,COALESCE((j#>>'{business,strategic_account}')::boolean,false),j#>>'{request,message}',j#>>'{data_quality,validation_status}',COALESCE(j#>>'{identity,status}','manual_review'),'manual_review','data_completion','manual_review',now(),now() FROM input\n ON CONFLICT (id) DO UPDATE SET validation_status=EXCLUDED.validation_status,final_status='manual_review',crm_stage='data_completion',processing_status='manual_review',updated_at=now() RETURNING id\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e->>'event_type','WF02_validation_identity',e->>'execution_id',COALESCE(e->'payload','{}'::jsonb),COALESCE((e->>'created_at')::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j->'audit_events','[]'::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "b66dc886-6949-476b-8024-7c53e99e1256",
+      "name": "Save Manual Review State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        11248,
+        4032
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.lead ?? $json;\nreturn [{ json: { status: 'manual_review', reason: 'incomplete_lead', lead_id: lead.lead_id ?? null } }];"
+      },
+      "id": "f3336345-a66e-4cd2-a857-c384cb107eb5",
+      "name": "Data Completion / Manual Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11504,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = lead.processing && typeof lead.processing === 'object' ? lead.processing : {};\nconst sourceType = lead.source?.type == null ? null : String(lead.source.type).trim();\nconst externalId = lead.source?.external_id == null ? null : String(lead.source.external_id).trim();\nlead.processing.idempotency_key = sourceType && externalId ? `${sourceType}:${externalId}` : `lead:${lead.lead_id}`;\nlead.processing.updated_at = new Date().toISOString();\nreturn [{ json: lead }];"
+      },
+      "id": "78ab3ae9-299a-4da9-9e47-2b01dfc55cfc",
+      "name": "Build Idempotency Key",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10976,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $2::jsonb AS lead,\n EXISTS (SELECT 1 FROM idempotency_keys WHERE key=$1 AND operation='lead_intake' AND status='completed' AND (expires_at IS NULL OR expires_at>now())) AS operation_exists,\n (SELECT response_reference FROM idempotency_keys WHERE key=$1 AND operation='lead_intake' AND status='completed' LIMIT 1) AS response_reference;",
+        "options": {
+          "queryReplacement": "={{ [$json.processing.idempotency_key, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "12957c75-fe56-4ee4-b472-291c641722e2",
+      "name": "Check Idempotency Key",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        11248,
+        3712
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "965b9ab1-9930-451f-aa15-19c725cb062b",
+              "leftValue": "={{ $json.operation_exists === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7279e817-e3db-446b-a114-7e829b36cba0",
+      "name": "Existing Operation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        11504,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.lead ?? {};\nreturn [{ json: { status: 'already_processed', operation: 'lead_intake', lead_id: lead.lead_id ?? null, idempotency_key: lead.processing?.idempotency_key ?? null, response_reference: $json.response_reference ?? null } }];"
+      },
+      "id": "57f8ef74-7fb0-4599-9fdd-57d1a51e0f56",
+      "name": "Idempotent Replay - No Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11760,
+        3920
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO idempotency_keys (key,operation,status,created_at,expires_at)\nVALUES ($1,'lead_intake','processing',now(),now()+interval '30 days')\nON CONFLICT (key) DO UPDATE SET status=CASE WHEN idempotency_keys.status='completed' THEN idempotency_keys.status ELSE 'processing' END, expires_at=GREATEST(idempotency_keys.expires_at,EXCLUDED.expires_at)\nRETURNING $2::jsonb AS lead;",
+        "options": {
+          "queryReplacement": "={{ [$json.lead.processing.idempotency_key, JSON.stringify($json.lead)] }}"
+        }
+      },
+      "id": "96734724-b61b-4a7f-a76a-837e0b7a5e5a",
+      "name": "Register Idempotency Operation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        11760,
+        3680
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    $6::jsonb AS incoming_lead,\n    COALESCE(\n        jsonb_agg(to_jsonb(l))\n            FILTER (WHERE l.id IS NOT NULL),\n        '[]'::jsonb\n    ) AS candidates\nFROM leads l\nWHERE l.id <> $1::uuid\nAND (\n    (\n        NULLIF($2, '') IS NOT NULL\n        AND l.phone_normalized = NULLIF($2, '')\n    )\n    OR\n    (\n        NULLIF($3, '') IS NOT NULL\n        AND l.email_normalized = NULLIF($3, '')\n    )\n    OR\n    (\n        NULLIF($4, '') IS NOT NULL\n        AND lower(trim(l.name)) = lower(trim($4))\n        AND l.received_at BETWEEN\n            (\n                ($6::jsonb #>> '{source,received_at}')::timestamptz\n                - interval '2 minutes'\n            )\n            AND\n            (\n                ($6::jsonb #>> '{source,received_at}')::timestamptz\n                + interval '2 minutes'\n            )\n    )\n);",
+        "options": {
+          "queryReplacement": "={{\n[\n  $json.lead.lead_id,\n  $json.lead.contact.phone_normalized ?? '',\n  $json.lead.contact.email_normalized ?? '',\n  $json.lead.contact.name ?? '',\n  $json.lead.business.company_name ?? '',\n  JSON.stringify($json.lead)\n]\n}}"
+        }
+      },
+      "id": "b6c5ced5-6d07-4aa9-9af7-34212297928d",
+      "name": "Find Identity Candidates",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        12016,
+        3680
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = JSON.parse(JSON.stringify($json.incoming_lead ?? {}));\nconst candidates = Array.isArray($json.candidates) ? $json.candidates : [];\nconst norm = (value) => value == null ? '' : String(value).trim().toLowerCase().replace(/\\s+/g, ' ');\nconst same = (a, b) => Boolean(norm(a) && norm(a) === norm(b));\nconst differs = (a, b) => Boolean(norm(a) && norm(b) && norm(a) !== norm(b));\nconst closeInTime = (a, b) => {\n  const first = Date.parse(a ?? '');\n  const second = Date.parse(b ?? '');\n  return Number.isFinite(first) && Number.isFinite(second) && Math.abs(first - second) <= 2 * 60 * 1000;\n};\n\nlet best = null;\nfor (const candidate of candidates) {\n  const phoneMatch = same(incoming.contact?.phone_normalized, candidate.phone_normalized);\n  const emailMatch = same(incoming.contact?.email_normalized, candidate.email_normalized);\n  const nameMatch = same(incoming.contact?.name, candidate.name);\n  const companyMatch = same(incoming.business?.company_name, candidate.company_name);\n  const differentSource = Boolean(norm(incoming.source?.type) && norm(candidate.source) && norm(incoming.source?.type) !== norm(candidate.source));\n  const timeMatch = closeInTime(incoming.source?.received_at, candidate.received_at);\n  const serviceMatch = same(incoming.business?.service_interest, candidate.service_interest);\n  const phoneConflict = differs(incoming.contact?.phone_normalized, candidate.phone_normalized);\n  const emailConflict = differs(incoming.contact?.email_normalized, candidate.email_normalized);\n  const seriousConflict = (phoneMatch && emailConflict) || (emailMatch && phoneConflict);\n  const exactContactMatch = phoneMatch || emailMatch;\n  const contextualScore =\n    (nameMatch ? 0.3 : 0) +\n    (companyMatch ? 0.2 : 0) +\n    (differentSource ? 0.1 : 0) +\n    (timeMatch ? 0.2 : 0) +\n    (serviceMatch ? 0.1 : 0);\n  const contextualConfidence = Math.min(1, Math.round(contextualScore * 10) / 10);\n  const confidence = exactContactMatch ? 1 : contextualConfidence;\n  const scored = {\n    candidate,\n    confidence,\n    contextualConfidence,\n    phoneMatch,\n    emailMatch,\n    nameMatch,\n    companyMatch,\n    differentSource,\n    timeMatch,\n    serviceMatch,\n    seriousConflict,\n    exactContactMatch\n  };\n  if (!best || Number(scored.exactContactMatch) > Number(best.exactContactMatch) ||\n      (scored.exactContactMatch === best.exactContactMatch && scored.confidence > best.confidence)) {\n    best = scored;\n  }\n}\n\nlet status = 'unique';\nif (best?.exactContactMatch) status = 'exact_duplicate';\nelse if (best && best.contextualConfidence >= 0.6) status = 'likely_duplicate';\n\nconst reason = !best\n  ? 'no_identity_candidate'\n  : `phone=${best.phoneMatch};email=${best.emailMatch};name=${best.nameMatch};company=${best.companyMatch};different_source=${best.differentSource};within_2_minutes=${best.timeMatch};service=${best.serviceMatch};serious_conflict=${best.seriousConflict}`;\n\nincoming.identity = {\n  status,\n  matched_lead_id: best?.candidate?.id ?? null,\n  confidence: best?.confidence ?? 0,\n  identity_conflict: best?.seriousConflict ?? false\n};\nincoming.processing = { ...(incoming.processing ?? {}), updated_at: new Date().toISOString() };\nincoming.audit_events = Array.isArray(incoming.audit_events) ? incoming.audit_events : [];\nif (status !== 'unique') incoming.audit_events.push({\n  lead_id: incoming.lead_id ?? null,\n  event_type: 'duplicate_detected',\n  workflow_name: 'WF02_validation_identity',\n  execution_id: $execution.id,\n  payload: { status, confidence: incoming.identity.confidence, matched_lead_id: incoming.identity.matched_lead_id, identity_conflict: incoming.identity.identity_conflict, reason },\n  created_at: new Date().toISOString()\n});\n\nif (status === 'exact_duplicate' && best) {\n  const candidateLeadId = incoming.lead_id;\n  const existing = best.candidate;\n  const prefer = (current, fallback) => current !== null && current !== undefined && current !== '' ? current : fallback;\n  incoming.lead_id = existing.id;\n  incoming.source = {\n    type: prefer(existing.source, incoming.source?.type),\n    external_id: prefer(existing.external_source_id, incoming.source?.external_id),\n    received_at: prefer(existing.received_at, incoming.source?.received_at)\n  };\n  incoming.contact = {\n    ...incoming.contact,\n    name: prefer(existing.name, incoming.contact?.name),\n    phone_raw: prefer(existing.phone_raw, incoming.contact?.phone_raw),\n    phone_normalized: prefer(existing.phone_normalized, incoming.contact?.phone_normalized),\n    email_raw: prefer(existing.email_raw, incoming.contact?.email_raw),\n    email_normalized: prefer(existing.email_normalized, incoming.contact?.email_normalized),\n    consent: existing.consent === true || incoming.contact?.consent === true\n  };\n  incoming.business = {\n    ...incoming.business,\n    company_name: prefer(existing.company_name, incoming.business?.company_name),\n    service_interest: prefer(existing.service_interest, incoming.business?.service_interest),\n    country: prefer(existing.country, incoming.business?.country),\n    industry: prefer(existing.industry, incoming.business?.industry),\n    company_size: prefer(existing.company_size, incoming.business?.company_size),\n    strategic_account: existing.strategic_account === true || incoming.business?.strategic_account === true\n  };\n  incoming.request = { ...incoming.request, message: prefer(existing.message, incoming.request?.message) };\n  incoming.identity = { status: 'exact_duplicate', matched_lead_id: existing.id, confidence: 1, identity_conflict: best.seriousConflict };\n  incoming.duplicate_decision = {\n    candidate_lead_id: candidateLeadId,\n    matched_lead_id: existing.id,\n    match_type: best.phoneMatch ? 'exact_phone' : 'exact_email',\n    confidence: 1,\n    decision: 'merge_missing_fields',\n    reason,\n    created_at: new Date().toISOString()\n  };\n}\n\nif (status === 'likely_duplicate' && best) incoming.duplicate_decision = {\n  candidate_lead_id: incoming.lead_id,\n  matched_lead_id: best.candidate.id,\n  match_type: 'likely_identity',\n  confidence: best.contextualConfidence,\n  decision: 'manual_review',\n  reason,\n  created_at: new Date().toISOString()\n};\nreturn [{ json: incoming }];"
+      },
+      "id": "76949da9-47c7-48ff-9128-b2472518664b",
+      "name": "Evaluate Identity Match",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        12288,
+        3680
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f74dafde-bc34-4e12-8f30-09d1bf36af98",
+              "leftValue": "={{ $json.identity.status === \"exact_duplicate\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "826a3dc4-7e5b-4283-8dc2-9464f5035e79",
+      "name": "Exact Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        12544,
+        3680
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cb8c2c1c-4b82-4bfe-a0dd-2f54ece36ecb",
+              "leftValue": "={{ $json.identity.status === \"likely_duplicate\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b01e6559-cdf3-4575-b7fa-a3c35fc85ab9",
+      "name": "Likely Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        12800,
+        3872
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,industry,company_size,strategic_account,message,validation_status,identity_status,processing_status,created_at,updated_at)\n SELECT (j->>'lead_id')::uuid,j#>>'{source,type}',j#>>'{source,external_id}',COALESCE((j#>>'{source,received_at}')::timestamptz,now()),j#>>'{contact,name}',j#>>'{contact,phone_raw}',j#>>'{contact,phone_normalized}',j#>>'{contact,email_raw}',j#>>'{contact,email_normalized}',COALESCE((j#>>'{contact,consent}')::boolean,false),j#>>'{business,company_name}',j#>>'{business,service_interest}',j#>>'{business,country}',j#>>'{business,industry}',NULLIF(j#>>'{business,company_size}','')::integer,COALESCE((j#>>'{business,strategic_account}')::boolean,false),j#>>'{request,message}','valid','unique','processing',now(),now() FROM input\n ON CONFLICT (id) DO UPDATE SET phone_normalized=EXCLUDED.phone_normalized,email_normalized=EXCLUDED.email_normalized,validation_status='valid',identity_status='unique',updated_at=now() RETURNING id\n), idem AS (\n UPDATE idempotency_keys SET lead_id=saved.id,status='completed',response_reference=saved.id::text FROM saved,input WHERE key=input.j#>>'{processing,idempotency_key}'\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e->>'event_type','WF02_validation_identity',e->>'execution_id',COALESCE(e->'payload','{}'::jsonb),COALESCE((e->>'created_at')::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j->'audit_events','[]'::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "5429f3ea-0244-43cf-9919-1f8f9b7d8b0a",
+      "name": "Save Unique Lead State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        13056,
+        3616
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (SELECT $1::jsonb AS j),\nmerged AS (\n UPDATE leads SET\n  name=COALESCE(leads.name,input.j#>>'{contact,name}'),\n  phone_raw=COALESCE(leads.phone_raw,input.j#>>'{contact,phone_raw}'),\n  phone_normalized=COALESCE(leads.phone_normalized,input.j#>>'{contact,phone_normalized}'),\n  email_raw=COALESCE(leads.email_raw,input.j#>>'{contact,email_raw}'),\n  email_normalized=COALESCE(leads.email_normalized,input.j#>>'{contact,email_normalized}'),\n  company_name=COALESCE(leads.company_name,input.j#>>'{business,company_name}'),\n  service_interest=COALESCE(leads.service_interest,input.j#>>'{business,service_interest}'),\n  country=COALESCE(leads.country,input.j#>>'{business,country}'),\n  industry=COALESCE(leads.industry,input.j#>>'{business,industry}'),\n  company_size=COALESCE(leads.company_size,NULLIF(input.j#>>'{business,company_size}','')::integer),\n  message=COALESCE(leads.message,input.j#>>'{request,message}'),\n  consent=leads.consent OR COALESCE((input.j#>>'{contact,consent}')::boolean,false),\n  strategic_account=leads.strategic_account OR COALESCE((input.j#>>'{business,strategic_account}')::boolean,false),\n  identity_status='exact_duplicate',\n  updated_at=now()\n FROM input\n WHERE leads.id=(input.j#>>'{identity,matched_lead_id}')::uuid\n RETURNING leads.id\n), decision AS (\n INSERT INTO duplicate_decisions (candidate_lead_id,matched_lead_id,match_type,confidence,decision,reason,created_at)\n SELECT\n  (j#>>'{duplicate_decision,candidate_lead_id}')::uuid,\n  merged.id,\n  j#>>'{duplicate_decision,match_type}',\n  (j#>>'{duplicate_decision,confidence}')::numeric,\n  j#>>'{duplicate_decision,decision}',\n  j#>>'{duplicate_decision,reason}',\n  COALESCE((j#>>'{duplicate_decision,created_at}')::timestamptz,now())\n FROM input,merged\n), idem AS (\n UPDATE idempotency_keys\n SET lead_id=merged.id,status='completed',response_reference=merged.id::text\n FROM merged,input\n WHERE key=input.j#>>'{processing,idempotency_key}'\n), history AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT merged.id,e->>'event_type','WF02_validation_identity',e->>'execution_id',COALESCE(e->'payload','{}'::jsonb),COALESCE((e->>'created_at')::timestamptz,now())\n FROM merged,input,LATERAL jsonb_array_elements(COALESCE(input.j->'audit_events','[]'::jsonb)) e\n), merged_event AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT merged.id,'duplicate_merged','WF02_validation_identity',NULL,\n  jsonb_build_object(\n   'candidate_lead_id',input.j#>>'{duplicate_decision,candidate_lead_id}',\n   'matched_lead_id',merged.id,\n   'match_type',input.j#>>'{duplicate_decision,match_type}',\n   'confidence',input.j#>>'{duplicate_decision,confidence}'\n  ),now()\n FROM merged,input\n)\nSELECT input.j AS lead FROM input;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "5b17ddea-bb06-4672-9531-9ec2aad695f2",
+      "name": "Save Exact Duplicate Merge",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        12800,
+        3488
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json ?? {}));\nlead.processing = { ...(lead.processing ?? {}), status: 'manual_review', current_workflow: 'WF02_validation_identity', next_workflow: null, updated_at: new Date().toISOString() };\nlead.audit_events = Array.isArray(lead.audit_events) ? lead.audit_events : [];\nlead.audit_events.push({ lead_id: lead.lead_id ?? null, event_type: 'manual_review_requested', workflow_name: 'WF02_validation_identity', execution_id: $execution.id, payload: { reason: 'likely_duplicate', duplicate_decision: lead.duplicate_decision }, created_at: new Date().toISOString() });\nreturn [{ json: lead }];"
+      },
+      "id": "e8e5804c-fc88-46c6-b2d4-30aa68743338",
+      "name": "Prepare Duplicate Manual Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13056,
+        3920
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (SELECT $1::jsonb AS j),\nsaved AS (\n INSERT INTO leads (id,source,external_source_id,received_at,name,phone_raw,phone_normalized,email_raw,email_normalized,consent,company_name,service_interest,country,strategic_account,message,validation_status,identity_status,final_status,processing_status,created_at,updated_at)\n SELECT (j->>'lead_id')::uuid,j#>>'{source,type}',j#>>'{source,external_id}',COALESCE((j#>>'{source,received_at}')::timestamptz,now()),j#>>'{contact,name}',j#>>'{contact,phone_raw}',j#>>'{contact,phone_normalized}',j#>>'{contact,email_raw}',j#>>'{contact,email_normalized}',COALESCE((j#>>'{contact,consent}')::boolean,false),j#>>'{business,company_name}',j#>>'{business,service_interest}',j#>>'{business,country}',COALESCE((j#>>'{business,strategic_account}')::boolean,false),j#>>'{request,message}','valid','likely_duplicate','manual_review','manual_review',now(),now() FROM input ON CONFLICT (id) DO UPDATE SET identity_status='likely_duplicate',final_status='manual_review',processing_status='manual_review',updated_at=now() RETURNING id\n), decision AS (\n INSERT INTO duplicate_decisions (candidate_lead_id,matched_lead_id,match_type,confidence,decision,reason,created_at)\n SELECT saved.id,(j#>>'{duplicate_decision,matched_lead_id}')::uuid,j#>>'{duplicate_decision,match_type}',(j#>>'{duplicate_decision,confidence}')::numeric,'manual_review',j#>>'{duplicate_decision,reason}',now() FROM input,saved\n), idem AS (\n UPDATE idempotency_keys SET lead_id=saved.id,status='completed',response_reference=saved.id::text FROM saved,input WHERE key=input.j#>>'{processing,idempotency_key}'\n), events AS (\n INSERT INTO lead_events (lead_id,event_type,workflow_name,execution_id,payload,created_at)\n SELECT saved.id,e->>'event_type','WF02_validation_identity',e->>'execution_id',COALESCE(e->'payload','{}'::jsonb),COALESCE((e->>'created_at')::timestamptz,now()) FROM saved,input,LATERAL jsonb_array_elements(COALESCE(input.j->'audit_events','[]'::jsonb)) e\n)\nSELECT input.j AS lead FROM input;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "50284662-d479-4c82-ba5e-4ac60966475d",
+      "name": "Save Duplicate Review State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        13328,
+        3920
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.lead ?? $json;\nreturn [{ json: { status: 'manual_review', reason: 'likely_duplicate', lead_id: lead.lead_id ?? null, matched_lead_id: lead.identity?.matched_lead_id ?? null, confidence: lead.identity?.confidence ?? 0 } }];"
+      },
+      "id": "94753eed-d43c-4f9c-8d16-03d4b7da96ca",
+      "name": "Duplicate Manual Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13584,
+        3920
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json.lead ?? $json ?? {}));\ndelete lead.audit_events;\ndelete lead.duplicate_decision;\ndelete lead.candidate_snapshot;\nlead.processing = { ...(lead.processing ?? {}), status: 'processing', current_workflow: 'WF02_validation_identity', next_workflow: 'WF03_enrichment_qualification', updated_at: new Date().toISOString() };\nreturn [{ json: lead }];"
+      },
+      "id": "c22dc4de-019e-4cb8-bb4c-d185d5a50725",
+      "name": "Prepare WF03 Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13328,
+        3600
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "EZjGdYNBnS4TzDFL",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/EZjGdYNBnS4TzDFL",
+          "cachedResultName": "WF03_enrichment_qualification"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1b32b2c2-3f34-460b-a60e-6f4a17f73335",
+      "name": "Execute WF03 - Enrichment & Qualification",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        13584,
+        3600
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by WF01": {
+      "main": [
+        [
+          {
+            "node": "Normalize Contact Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Contact Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Lead": {
+      "main": [
+        [
+          {
+            "node": "Lead Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Complete?": {
+      "main": [
+        [
+          {
+            "node": "Build Idempotency Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Data Completion State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Completion State": {
+      "main": [
+        [
+          {
+            "node": "Save Manual Review State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Manual Review State": {
+      "main": [
+        [
+          {
+            "node": "Data Completion / Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Idempotency Key": {
+      "main": [
+        [
+          {
+            "node": "Check Idempotency Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Idempotency Key": {
+      "main": [
+        [
+          {
+            "node": "Existing Operation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Operation?": {
+      "main": [
+        [
+          {
+            "node": "Idempotent Replay - No Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Register Idempotency Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Idempotency Operation": {
+      "main": [
+        [
+          {
+            "node": "Find Identity Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Identity Match": {
+      "main": [
+        [
+          {
+            "node": "Exact Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exact Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Save Exact Duplicate Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Likely Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Likely Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Duplicate Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Unique Lead State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Duplicate Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Save Duplicate Review State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Duplicate Review State": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Unique Lead State": {
+      "main": [
+        [
+          {
+            "node": "Prepare WF03 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Exact Duplicate Merge": {
+      "main": [
+        [
+          {
+            "node": "Prepare WF03 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare WF03 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Execute WF03 - Enrichment & Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Identity Candidates": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Identity Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c071911e-5f62-4f69-a386-b09fec909ace",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "HeoO8LzCz7vlJFyN",
+  "tags": []
 }

@@ -1,0 +1,100 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t08-phone-base-001",
+      "received_at": "2026-08-13T22:14:15.57+00:00"
+    },
+    "contact": {
+      "name": "Phone Format Evidence Lead",
+      "consent": true,
+      "email_raw": "phone.base.t08@example.com",
+      "phone_raw": "+201012345678",
+      "email_normalized": "phone.base.t08@example.com",
+      "phone_normalized": "+201012345678"
+    },
+    "lead_id": "3ddd0f09-2e97-4bbe-94c8-15a97efa3cc6",
+    "request": {
+      "message": "Baseline lead for phone normalization test.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Unknown",
+      "company_name": "Format Systems",
+      "company_size": 50,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-13T22:16:01.827Z",
+      "retry_count": 0,
+      "next_workflow": "WF02_validation_identity",
+      "idempotency_key": "whatsapp:evidence-t08-phone-format-001",
+      "current_workflow": "WF02_validation_identity"
+    },
+    "audit_events": [
+      {
+        "lead_id": "94fe3844-88b0-4f29-8599-9b76813d374e",
+        "payload": {
+          "email_present": false,
+          "phone_present": true
+        },
+        "created_at": "2026-08-13T22:16:01.491Z",
+        "event_type": "normalized",
+        "execution_id": "277",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "94fe3844-88b0-4f29-8599-9b76813d374e",
+        "payload": {
+          "validation_status": "valid"
+        },
+        "created_at": "2026-08-13T22:16:01.502Z",
+        "event_type": "data_completed",
+        "execution_id": "277",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "94fe3844-88b0-4f29-8599-9b76813d374e",
+        "event_type": "duplicate_detected",
+        "workflow_name": "WF02_validation_identity",
+        "execution_id": "277",
+        "payload": {
+          "status": "exact_duplicate",
+          "confidence": 1,
+          "matched_lead_id": "3ddd0f09-2e97-4bbe-94c8-15a97efa3cc6",
+          "identity_conflict": false,
+          "reason": "phone=true;email=false;name=true;company=false;different_source=true;within_2_minutes=true;service=true;serious_conflict=false"
+        },
+        "created_at": "2026-08-13T22:16:01.827Z"
+      }
+    ],
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "identity": {
+      "status": "exact_duplicate",
+      "matched_lead_id": "3ddd0f09-2e97-4bbe-94c8-15a97efa3cc6",
+      "confidence": 1,
+      "identity_conflict": false
+    },
+    "duplicate_decision": {
+      "candidate_lead_id": "94fe3844-88b0-4f29-8599-9b76813d374e",
+      "matched_lead_id": "3ddd0f09-2e97-4bbe-94c8-15a97efa3cc6",
+      "match_type": "exact_phone",
+      "confidence": 1,
+      "decision": "merge_missing_fields",
+      "reason": "phone=true;email=false;name=true;company=false;different_source=true;within_2_minutes=true;service=true;serious_conflict=false",
+      "created_at": "2026-08-13T22:16:01.827Z"
+    }
+  }
+]

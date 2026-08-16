@@ -1,0 +1,104 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t11-deterministic-score-001",
+      "received_at": "2026-08-14T09:16:50.427Z"
+    },
+    "contact": {
+      "name": "T11 Qualification Lead",
+      "consent": true,
+      "email_raw": "t11.qualification@example.com",
+      "phone_raw": "+201055511011",
+      "email_normalized": "t11.qualification@example.com",
+      "phone_normalized": "+201055511011"
+    },
+    "lead_id": "8f02bba4-16c4-42bc-a769-d1e95e6ea1e4",
+    "request": {
+      "message": "We need urgent automation implementation for our business.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Technology",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "enrichment": {
+      "valid": true,
+      "errors": [],
+      "status": "completed",
+      "required": true,
+      "response": {
+        "country": "Egypt",
+        "industry": "Technology",
+        "confidence": 0.91,
+        "company_size": 240,
+        "strategic_account": false
+      },
+      "completed_at": "2026-08-14T09:17:04.988Z",
+      "merged_fields": [
+        "company_size",
+        "industry"
+      ],
+      "requested_fields": [
+        "company_size",
+        "industry"
+      ],
+      "attempts_configured": 3
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-14T09:17:05.212Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t11-deterministic-score-001",
+      "current_workflow": "WF03_enrichment_qualification"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "wf03_context": {
+      "started_at": "2026-08-14T09:16:50.887Z",
+      "execution_id": "292"
+    },
+    "qualification": {
+      "rule_score": 55,
+      "score_breakdown": {
+        "company_size": 20,
+        "service_value": 5,
+        "intent": 15,
+        "urgency": 15,
+        "geography": 0,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "rule_classification": "nurture",
+      "is_vip": false
+    },
+    "scoring_context": {
+      "service_value_tier": "low",
+      "intent_basis": "clear_business_requirement",
+      "urgency_basis": "high",
+      "configuration_notes": [
+        "Service-value and target-market mappings require approved configuration; current explicit demo defaults use empty mapping sets.",
+        "Intent and urgency keyword lists are centralized assessment/demo defaults and do not use Gemini."
+      ]
+    }
+  }
+]

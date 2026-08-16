@@ -1,0 +1,76 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t04-unique-001",
+      "received_at": "2026-08-13T15:54:06.307Z"
+    },
+    "contact": {
+      "name": "Unique Evidence Lead",
+      "consent": true,
+      "email_raw": "unique.t04@example.com",
+      "phone_raw": "+201001114401",
+      "email_normalized": "unique.t04@example.com",
+      "phone_normalized": "+201001114401"
+    },
+    "lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+    "request": {
+      "message": "Need AI automation for our operations.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": null,
+      "company_name": "Unique Systems",
+      "company_size": null,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-13T15:54:06.706Z",
+      "retry_count": 0,
+      "next_workflow": "WF02_validation_identity",
+      "idempotency_key": "website:evidence-t04-unique-001",
+      "current_workflow": "WF02_validation_identity"
+    },
+    "audit_events": [
+      {
+        "lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+        "payload": {
+          "email_present": true,
+          "phone_present": true
+        },
+        "created_at": "2026-08-13T15:54:06.373Z",
+        "event_type": "normalized",
+        "execution_id": "253",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+        "payload": {
+          "validation_status": "valid"
+        },
+        "created_at": "2026-08-13T15:54:06.392Z",
+        "event_type": "data_completed",
+        "execution_id": "253",
+        "workflow_name": "WF02_validation_identity"
+      }
+    ],
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "identity": {
+      "status": "unique",
+      "matched_lead_id": null,
+      "confidence": 0
+    }
+  }
+]

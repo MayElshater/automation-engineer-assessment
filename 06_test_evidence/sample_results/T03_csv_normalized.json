@@ -1,0 +1,122 @@
+[
+  {
+    "lead_id": "7dbd28e9-038c-4d4d-b29c-b24f7ce401d2",
+    "source": {
+      "type": "csv",
+      "external_id": "csv-evidence-1001",
+      "received_at": "2026-08-13T14:15:45.217Z"
+    },
+    "contact": {
+      "name": "Sara Ali",
+      "phone_raw": "+201112223331",
+      "phone_normalized": null,
+      "email_raw": "sara.t03@example.com",
+      "email_normalized": null,
+      "consent": true
+    },
+    "business": {
+      "company_name": "ABC Group",
+      "service_interest": "CRM Automation",
+      "country": "Egypt",
+      "industry": null,
+      "company_size": null,
+      "strategic_account": false
+    },
+    "request": {
+      "message": "Need CRM automation",
+      "urgency": "unknown"
+    },
+    "processing": {
+      "status": "processing",
+      "retry_count": 0,
+      "last_error": null,
+      "updated_at": "2026-08-13T14:15:45.217Z",
+      "current_workflow": "WF01_csv_import",
+      "next_workflow": "WF02_validation_identity"
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    }
+  },
+  {
+    "lead_id": "4140a67c-d0e5-4975-a6d9-ac1261f84ff1",
+    "source": {
+      "type": "csv",
+      "external_id": "csv-evidence-1002",
+      "received_at": "2026-08-13T14:15:45.217Z"
+    },
+    "contact": {
+      "name": "Omar Hassan",
+      "phone_raw": "+201112223332",
+      "phone_normalized": null,
+      "email_raw": "omar.t03@example.com",
+      "email_normalized": null,
+      "consent": true
+    },
+    "business": {
+      "company_name": "Delta Tech",
+      "service_interest": "AI Automation",
+      "country": "Egypt",
+      "industry": null,
+      "company_size": null,
+      "strategic_account": false
+    },
+    "request": {
+      "message": "Need AI automation",
+      "urgency": "unknown"
+    },
+    "processing": {
+      "status": "processing",
+      "retry_count": 0,
+      "last_error": null,
+      "updated_at": "2026-08-13T14:15:45.217Z",
+      "current_workflow": "WF01_csv_import",
+      "next_workflow": "WF02_validation_identity"
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    }
+  },
+  {
+    "lead_id": "aa5fbf60-4773-4e8f-999f-6eff4eca4565",
+    "source": {
+      "type": "csv",
+      "external_id": "csv-evidence-1003",
+      "received_at": "2026-08-13T14:15:45.217Z"
+    },
+    "contact": {
+      "name": "Mona Adel",
+      "phone_raw": "+201112223334",
+      "phone_normalized": null,
+      "email_raw": "mona.t03@example.com",
+      "email_normalized": null,
+      "consent": true
+    },
+    "business": {
+      "company_name": "Nile Systems",
+      "service_interest": "Chatbot Development",
+      "country": "Egypt",
+      "industry": null,
+      "company_size": null,
+      "strategic_account": false
+    },
+    "request": {
+      "message": "Need chatbot development",
+      "urgency": "unknown"
+    },
+    "processing": {
+      "status": "processing",
+      "retry_count": 0,
+      "last_error": null,
+      "updated_at": "2026-08-13T14:15:45.217Z",
+      "current_workflow": "WF01_csv_import",
+      "next_workflow": "WF02_validation_identity"
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    }
+  }
+]

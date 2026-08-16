@@ -1,0 +1,23 @@
+[
+  {
+    "step_number": 1,
+    "scheduled_at": "2026-08-15 10:17:11.795448+00",
+    "executed_at": "2026-08-15 10:21:06.436813+00",
+    "status": "executed",
+    "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:1"
+  },
+  {
+    "step_number": 2,
+    "scheduled_at": "2026-08-18 05:11:28.517+00",
+    "executed_at": null,
+    "status": "scheduled",
+    "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:2"
+  },
+  {
+    "step_number": 3,
+    "scheduled_at": "2026-08-22 05:11:28.517+00",
+    "executed_at": null,
+    "status": "scheduled",
+    "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:3"
+  }
+]

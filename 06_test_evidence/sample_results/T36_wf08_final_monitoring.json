@@ -1,0 +1,57 @@
+[
+  {
+    "monitoring": {
+      "generated_at": "2026-08-16T10:08:51.583Z",
+      "workflow": "WF08_monitoring_sla",
+      "summary": {
+        "won_leads": 2,
+        "duplicates": 3,
+        "total_leads": 28,
+        "booked_leads": 2,
+        "nurture_leads": 4,
+        "qualified_leads": 6,
+        "active_followups": 0,
+        "failed_dlq_items": 1,
+        "pending_dlq_items": 0,
+        "resolved_dlq_items": 5,
+        "sla_breached_leads": 4,
+        "manual_review_leads": 11
+      },
+      "sla": {
+        "threshold_minutes": 30,
+        "candidate_count": 1,
+        "within_threshold_count": 0,
+        "breached_count": 1,
+        "data_incomplete_count": 0
+      },
+      "current_evaluation": {
+        "sla": {
+          "status": "breached",
+          "breached": true,
+          "eligible": true,
+          "sla_started_at": "2026-08-16T07:18:05.205047+00:00",
+          "elapsed_minutes": 170,
+          "threshold_minutes": 30
+        },
+        "name": "T16 Qualified Routing Lead",
+        "lead_id": "d5551356-032c-4e52-8ad7-6649c006a4b0",
+        "priority": "high",
+        "crm_stage": "qualified",
+        "next_action": "sales_follow_up",
+        "sla_outcome": "breached",
+        "final_status": "qualified",
+        "sla_started_at": "2026-08-16T07:18:05.205047+00:00",
+        "evaluation_batch": {
+          "breached_count": 1,
+          "candidate_count": 1,
+          "data_incomplete_count": 0,
+          "within_threshold_count": 0
+        },
+        "processing_status": "processing",
+        "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6",
+        "minutes_since_sla_start": 170
+      },
+      "sla_action": "already_escalated"
+    }
+  }
+]

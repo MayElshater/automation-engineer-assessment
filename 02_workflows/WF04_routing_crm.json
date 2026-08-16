@@ -3,36 +3,714 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Temporary WF04 Stub\n\nThis workflow exists only to allow WF03 integration testing.\n\nThe real WF04 will later implement:\n- Post-Qualification Routing\n- VIP Manager Approval path\n- Qualified Sales Assignment\n- Nurture routing\n- Unqualified handling\n- Manual Review handling\n- Odoo CRM synchronization\n\nThis stub must be replaced during WF04 implementation.",
-        "height": 360,
-        "width": 760,
-        "color": 3
+        "content": "## WF04 Responsibility\n\nValidates WF03, loads authoritative lead state, routes every final status, persists local decisions, and returns a clean canonical lead.\n\nIdentity, scoring, AI classification, messaging, and external CRM calls are outside this workflow.",
+        "height": 280,
+        "width": 600,
+        "color": 2
       },
-      "id": "eb2a6b81-ea35-43e3-bd6f-98755f3f8ac0",
-      "name": "Temporary WF04 Stub",
+      "id": "863c0884-bd8d-40cf-96c0-b1d65d4e4541",
+      "name": "WF04 Responsibility",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [1040, 520]
+      "position": [
+        -1808,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Routing Rules\n\n- VIP â†’ Manager Approval; no automatic assignment\n- Qualified â†’ Sales Assignment\n- Nurture â†’ prepared WF05 handoff\n- Unqualified â†’ close / low-frequency policy\n- Manual Review â†’ human resolution",
+        "height": 260,
+        "width": 500,
+        "color": 4
+      },
+      "id": "6fd405df-c697-44b3-a9a0-b1aec2c07ad9",
+      "name": "Routing Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Sales Assignment & Fallback\n\nActive reps below capacity only.\n\nTiers: service + country; service; country; any available rep.\n\nWithin a tier: load ratio, current load, ID. Atomic persistence re-checks capacity; stale selections enter manual assignment.",
+        "height": 300,
+        "width": 600,
+        "color": 5
+      },
+      "id": "908871f6-afa2-41f4-9a81-657c4ae4d3e8",
+      "name": "Sales Assignment & Fallback",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## VIP Human Approval\n\nVIP routing idempotently ensures an approval record and stops before sales assignment. Automated sales action remains blocked pending a later approved-flow implementation.",
+        "height": 230,
+        "width": 520,
+        "color": 6
+      },
+      "id": "1e846807-0cae-4d41-bd45-7203c8b9dce5",
+      "name": "VIP Human Approval",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## CRM Integration Boundary\n\nStage A/B persists local CRM routing state only.\nReal Odoo API synchronization and CRM failure/recovery edge cases are implemented in a later WF04 stage.\n\nWF04 persists local CRM routing state.\nReal Odoo API synchronization remains deferred.\nEligible Qualified and Nurture leads are handed off to WF05 after routing persistence.\nNo real customer messaging, booking, Odoo synchronization, or SLA handling occurs in WF04.",
+        "height": 270,
+        "width": 600,
+        "color": 3
+      },
+      "id": "394cfdd6-1ba6-46da-9020-874b26a5b620",
+      "name": "CRM Integration Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        352
+      ]
     },
     {
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "fbf4402d-091f-47f4-abd9-5670825f40e1",
+      "id": "00e97e48-7584-4fac-99f1-c2c67ee194f2",
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [1200, 960]
+      "position": [
+        -1536,
+        1024
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const incomingLead = structuredClone($json ?? {});\n\nreturn [{\n  json: {\n    ...incomingLead,\n    wf04_stub: {\n      status: 'not_implemented',\n      message: 'Temporary WF04 stub used for WF03 integration testing.',\n    },\n  },\n}];"
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json??{}));const required=[['lead_id',lead.lead_id],['qualification',lead.qualification],['qualification.final_status',lead.qualification?.final_status],['processing',lead.processing],['business',lead.business],['contact',lead.contact],['source',lead.source]];const missing=required.filter(([,v])=>v==null||v==='').map(([k])=>k);if(missing.length)throw new Error('Invalid WF03 handoff: missing '+missing.join(', '));if(!['vip','qualified','nurture','unqualified','manual_review'].includes(lead.qualification.final_status))throw new Error('Invalid WF03 handoff: unsupported qualification.final_status \"'+lead.qualification.final_status+'\"');lead.processing={...lead.processing,current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};return [{json:lead}];"
       },
-      "id": "de6374ee-cdce-4f1c-88d7-f728769c6fe9",
-      "name": "Return WF04 Stub Result",
+      "id": "6e321430-66b5-4ff7-bbb5-0a60e8bcb1c1",
+      "name": "Validate WF03 Handoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1480, 960]
+      "position": [
+        -1328,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $2::jsonb workflow_lead,CASE WHEN l.id IS NULL THEN NULL ELSE to_jsonb(l) END database_lead FROM (SELECT 1) a LEFT JOIN leads l ON l.id=$1::uuid;",
+        "options": {
+          "queryReplacement": "={{ [$json.lead_id, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "a2e283fb-0c83-4f3e-a393-1234fd101cb2",
+      "name": "Load Canonical Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1088,
+        1024
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.workflow_lead??{}));const db=$json.database_lead;if(!db?.id)throw new Error('Canonical lead not found in leads for lead_id='+(lead.lead_id??'unknown'));const w=(v,f)=>v!==null&&v!==undefined?v:f;lead.lead_id=db.id;lead.source={...lead.source,type:w(db.source,lead.source?.type),external_id:w(db.external_source_id,lead.source?.external_id),received_at:w(db.received_at,lead.source?.received_at)};lead.contact={...lead.contact,name:w(db.name,lead.contact?.name),phone_raw:w(db.phone_raw,lead.contact?.phone_raw),phone_normalized:w(db.phone_normalized,lead.contact?.phone_normalized),email_raw:w(db.email_raw,lead.contact?.email_raw),email_normalized:w(db.email_normalized,lead.contact?.email_normalized),consent:w(db.consent,lead.contact?.consent)};lead.business={...lead.business,company_name:w(db.company_name,lead.business?.company_name),service_interest:w(db.service_interest,lead.business?.service_interest),country:w(db.country,lead.business?.country),industry:w(db.industry,lead.business?.industry),company_size:w(db.company_size,lead.business?.company_size),strategic_account:w(db.strategic_account,lead.business?.strategic_account)};lead.request={...lead.request,message:w(db.message,lead.request?.message)};lead.crm={...(lead.crm??{}),odoo_lead_id:w(db.odoo_lead_id,lead.crm?.odoo_lead_id),stage:w(db.crm_stage,lead.crm?.stage),next_action:w(db.next_action,lead.crm?.next_action)};lead.routing={...(lead.routing??{}),assigned_sales_rep_id:w(db.assigned_sales_rep_id,lead.routing?.assigned_sales_rep_id??null),priority:w(db.priority,lead.routing?.priority??null)};lead.processing={...lead.processing,status:w(db.processing_status,lead.processing?.status),current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};return [{json:lead}];"
+      },
+      "id": "c415c157-7e4c-4689-af51-b37a2d41f30f",
+      "name": "Merge Authoritative Routing State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));const route=lead.qualification.final_status;const priority={vip:'critical',qualified:'high',nurture:'medium',unqualified:'low',manual_review:'high'}[route];lead.routing={...(lead.routing??{}),service_category:lead.business?.service_interest??null,assigned_sales_rep_id:null,assignment_reason:null,priority,route};return [{json:lead}];"
+      },
+      "id": "f0161e2d-2007-4b4a-97b7-d15a85b60945",
+      "name": "Determine Routing Path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-0",
+                    "leftValue": "={{ $json.routing.route }}",
+                    "rightValue": "vip",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "vip"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-1",
+                    "leftValue": "={{ $json.routing.route }}",
+                    "rightValue": "qualified",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "qualified"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-2",
+                    "leftValue": "={{ $json.routing.route }}",
+                    "rightValue": "nurture",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nurture"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-3",
+                    "leftValue": "={{ $json.routing.route }}",
+                    "rightValue": "unqualified",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unqualified"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-4",
+                    "leftValue": "={{ $json.routing.route }}",
+                    "rightValue": "manual_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "manual_review"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "d9193e71-cd33-40c3-b693-b773bb496605",
+      "name": "Switch / Routing Branch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -496,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),e AS(SELECT status FROM manager_approvals,i WHERE lead_id=(j->>'lead_id')::uuid AND status IN('pending','approved','rejected') ORDER BY requested_at DESC LIMIT 1),n AS(INSERT INTO manager_approvals(lead_id,status,requested_at,reason) SELECT (j->>'lead_id')::uuid,'pending',now(),'VIP lead requires manager approval before automated sales action' FROM i WHERE NOT EXISTS(SELECT 1 FROM e) RETURNING status),a AS(SELECT status FROM e UNION ALL SELECT status FROM n LIMIT 1) SELECT i.j lead,COALESCE((SELECT status FROM a),'pending') approval_status FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "a9133e4e-e562-4cdc-aeae-98e3e10b1cfe",
+      "name": "Ensure VIP Manager Approval",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -320,
+        640
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));lead.routing={...lead.routing,assigned_sales_rep_id:null,assignment_reason:'manager_approval_required',priority:'critical'};lead.crm={...(lead.crm??{}),stage:'qualified',next_action:'await_manager_approval'};lead.processing={...lead.processing,status:'processing',current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};lead.manager_approval={status:$json.approval_status??'pending'};return [{json:lead}];"
+      },
+      "id": "5fc6736e-89dd-4f99-b5e3-57a132b94455",
+      "name": "Prepare VIP Pending Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),u AS(UPDATE leads SET assigned_sales_rep_id=NULL,priority='critical',crm_stage='qualified',next_action='await_manager_approval',processing_status='processing',updated_at=now() FROM i WHERE leads.id=(j->>'lead_id')::uuid RETURNING leads.id),e AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at) SELECT u.id,'manager_approval_requested','WF04_routing_crm',$2,jsonb_build_object('final_status',j#>>'{qualification,final_status}','priority',j#>>'{routing,priority}','approval_status',j#>>'{manager_approval,status}'),now() FROM u,i WHERE NOT EXISTS(SELECT 1 FROM lead_events x WHERE x.lead_id=u.id AND x.event_type='manager_approval_requested')) SELECT i.j lead FROM i,u;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "1cc60381-0e2f-4df6-ade5-e7798089f116",
+      "name": "Persist VIP Routing State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        288,
+        640
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));lead.sales_assignment_context={service_category:lead.business?.service_interest??null,country:lead.business?.country??null,urgency:lead.request?.urgency??'unknown',priority:lead.routing?.priority??'high'};return [{json:lead}];"
+      },
+      "id": "beee1276-e7bb-4920-963c-23f9faf7f37c",
+      "name": "Build Sales Assignment Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),e AS(SELECT s.id,s.name,s.current_load,s.max_load,CASE WHEN NULLIF(j#>>'{sales_assignment_context,service_category}','')=ANY(COALESCE(s.service_categories,ARRAY[]::text[])) AND NULLIF(j#>>'{sales_assignment_context,country}','')=ANY(COALESCE(s.countries,ARRAY[]::text[])) THEN 1 WHEN NULLIF(j#>>'{sales_assignment_context,service_category}','')=ANY(COALESCE(s.service_categories,ARRAY[]::text[])) THEN 2 WHEN NULLIF(j#>>'{sales_assignment_context,country}','')=ANY(COALESCE(s.countries,ARRAY[]::text[])) THEN 3 ELSE 4 END candidate_tier,s.current_load::numeric/NULLIF(s.max_load,0) load_ratio FROM sales_reps s,i WHERE s.active=true AND s.current_load<s.max_load),r AS(SELECT * FROM e ORDER BY candidate_tier,load_ratio NULLS LAST,current_load,id) SELECT i.j lead,COALESCE(jsonb_agg(jsonb_build_object('id',r.id,'name',r.name,'candidate_tier',r.candidate_tier,'current_load',r.current_load,'max_load',r.max_load) ORDER BY r.candidate_tier,r.load_ratio NULLS LAST,r.current_load,r.id)FILTER(WHERE r.id IS NOT NULL),'[]'::jsonb)candidates FROM i LEFT JOIN r ON true GROUP BY i.j;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "ccfd7991-0393-4a3f-9a5a-75dd4badf08c",
+      "name": "Find Eligible Sales Reps",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        832
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??{}));const s=(Array.isArray($json.candidates)?$json.candidates:[])[0]??null;if(s){const r={1:'tier_1_service_country_match_lowest_workload',2:'tier_2_service_match_lowest_workload',3:'tier_3_country_match_lowest_workload',4:'tier_4_available_capacity_lowest_workload'};lead.routing={...lead.routing,assigned_sales_rep_id:s.id,assignment_reason:r[s.candidate_tier],assignment_context:{selected_rep_name:s.name,candidate_tier:s.candidate_tier,current_load:s.current_load,max_load:s.max_load}};lead.crm={...(lead.crm??{}),stage:'qualified',next_action:'sales_follow_up'};lead.processing={...lead.processing,status:'processing',current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()}}else lead.routing={...lead.routing,assigned_sales_rep_id:null,assignment_reason:'no_eligible_sales_rep'};return [{json:lead}];"
+      },
+      "id": "f244e64f-7877-4519-bfcd-6cb63468be2b",
+      "name": "Select Best Sales Rep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5abcb297-d994-499b-a25a-262c827d1c08-c",
+              "leftValue": "={{ $json.routing.assigned_sales_rep_id !== null }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "161b0104-258f-410a-b5fd-8dd460cdbca0",
+      "name": "Rep Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (\n  SELECT $1::jsonb AS j\n), candidate AS (\n  SELECT\n    sr.id,\n    sr.name,\n    sr.current_load,\n    sr.max_load,\n    CASE\n      WHEN NULLIF(input.j#>>'{sales_assignment_context,service_category}', '') = ANY(COALESCE(sr.service_categories, ARRAY[]::text[]))\n       AND NULLIF(input.j#>>'{sales_assignment_context,country}', '') = ANY(COALESCE(sr.countries, ARRAY[]::text[])) THEN 1\n      WHEN NULLIF(input.j#>>'{sales_assignment_context,service_category}', '') = ANY(COALESCE(sr.service_categories, ARRAY[]::text[])) THEN 2\n      WHEN NULLIF(input.j#>>'{sales_assignment_context,country}', '') = ANY(COALESCE(sr.countries, ARRAY[]::text[])) THEN 3\n      ELSE 4\n    END AS candidate_tier\n  FROM sales_reps sr, input\n  WHERE sr.active = true\n    AND sr.current_load < sr.max_load\n  ORDER BY\n    candidate_tier,\n    sr.current_load::numeric / NULLIF(sr.max_load, 0) NULLS LAST,\n    sr.current_load,\n    sr.id\n  FOR UPDATE OF sr SKIP LOCKED\n  LIMIT 1\n), selected AS (\n  UPDATE sales_reps\n  SET current_load = sales_reps.current_load + 1,\n      updated_at = now()\n  FROM candidate\n  WHERE sales_reps.id = candidate.id\n    AND sales_reps.active = true\n    AND sales_reps.current_load < sales_reps.max_load\n  RETURNING\n    sales_reps.id,\n    sales_reps.name,\n    candidate.candidate_tier,\n    sales_reps.current_load,\n    sales_reps.max_load\n), updated AS (\n  UPDATE leads\n  SET assigned_sales_rep_id = selected.id,\n      priority = input.j#>>'{routing,priority}',\n      crm_stage = 'qualified',\n      next_action = 'sales_follow_up',\n      processing_status = 'processing',\n      updated_at = now()\n  FROM input, selected\n  WHERE leads.id = (input.j->>'lead_id')::uuid\n  RETURNING leads.id\n), event AS (\n  INSERT INTO lead_events (lead_id, event_type, workflow_name, execution_id, payload, created_at)\n  SELECT\n    updated.id,\n    'sales_assigned',\n    'WF04_routing_crm',\n    $2,\n    jsonb_build_object(\n      'rep_id', selected.id,\n      'assignment_reason', CASE selected.candidate_tier\n        WHEN 1 THEN 'tier_1_service_country_match_lowest_workload'\n        WHEN 2 THEN 'tier_2_service_match_lowest_workload'\n        WHEN 3 THEN 'tier_3_country_match_lowest_workload'\n        ELSE 'tier_4_available_capacity_lowest_workload'\n      END,\n      'service_category', input.j#>>'{routing,service_category}',\n      'country', input.j#>>'{business,country}',\n      'priority', input.j#>>'{routing,priority}'\n    ),\n    now()\n  FROM updated, selected, input\n)\nSELECT\n  input.j AS lead,\n  selected.id AS assigned_rep_id,\n  selected.name AS selected_rep_name,\n  selected.candidate_tier,\n  selected.current_load,\n  selected.max_load\nFROM input\nLEFT JOIN selected ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "bc7c12f2-50d9-4bd3-ad3b-cae0107140f7",
+      "name": "Persist Sales Assignment",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        608,
+        816
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a5fc6acd-30ee-4181-817f-1884382ebc48-c",
+              "leftValue": "={{ $json.assigned_rep_id !== null && $json.assigned_rep_id !== undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "65259b55-71e6-4efd-a9b0-f78146bdcf7b",
+      "name": "Assignment Persisted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));lead.routing={...lead.routing,assigned_sales_rep_id:null,assignment_reason:'no_eligible_sales_rep',priority:'high'};lead.crm={...(lead.crm??{}),stage:'qualified',next_action:'manual_sales_assignment'};lead.processing={...lead.processing,status:'manual_review',current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};lead.routing_failure={reason:'No active sales representative with available capacity.'};return [{json:lead}];"
+      },
+      "id": "316767e1-a76d-4ea7-8001-9b18f2991698",
+      "name": "Prepare Assignment Manual Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),u AS(UPDATE leads SET assigned_sales_rep_id=NULL,priority='high',crm_stage='qualified',next_action='manual_sales_assignment',processing_status='manual_review',updated_at=now() FROM i WHERE leads.id=(j->>'lead_id')::uuid RETURNING leads.id),f AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT id,'routing_failed','WF04_routing_crm',$2,jsonb_build_object('reason','No active sales representative with available capacity.'),now()FROM u),r AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT id,'manual_review_requested','WF04_routing_crm',$2,jsonb_build_object('reason','No active sales representative with available capacity.','qualification_final_status',j#>>'{qualification,final_status}'),now()FROM u,i)SELECT i.j lead FROM i,u;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "fa209488-7d4d-4566-ba35-4abc4135045a",
+      "name": "Persist Manual Review",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        304,
+        1424
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));lead.routing={...lead.routing,priority:'medium',assigned_sales_rep_id:null,assignment_reason:'nurture_followup_path'};lead.crm={...(lead.crm??{}),stage:'nurture',next_action:'start_nurture_sequence'};lead.follow_up={...(lead.follow_up??{}),sequence:'nurture',step:0,stopped:false};lead.processing={...lead.processing,status:'processing',current_workflow:'WF04_routing_crm',next_workflow:'WF05_followup_engine',updated_at:new Date().toISOString()};lead.routing_event_type='routed_to_nurture';return [{json:lead}];"
+      },
+      "id": "dc53b346-a093-47ea-9894-872d851fac32",
+      "name": "Prepare Nurture Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));lead.routing={...lead.routing,priority:'low',assigned_sales_rep_id:null,assignment_reason:'unqualified_business_rule'};lead.crm={...(lead.crm??{}),stage:'closed',next_action:'low_frequency_nurture_or_close'};lead.follow_up={...(lead.follow_up??{}),sequence:'none',stopped:true};lead.processing={...lead.processing,status:'completed',current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};lead.routing_event_type='lead_closed_unqualified';return [{json:lead}];"
+      },
+      "id": "7a636aba-d8b0-494b-aebc-b6e2a18a4deb",
+      "name": "Prepare Unqualified Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json));lead.routing={...lead.routing,priority:'high',assigned_sales_rep_id:null,assignment_reason:'qualification_manual_review'};lead.crm={...(lead.crm??{}),stage:lead.crm?.stage??'qualified',next_action:'human_review'};lead.processing={...lead.processing,status:'manual_review',current_workflow:'WF04_routing_crm',next_workflow:null,updated_at:new Date().toISOString()};lead.routing_event_type='manual_review_requested';return [{json:lead}];"
+      },
+      "id": "df144edd-889c-4c8c-885b-759938de6447",
+      "name": "Prepare Human Review Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        1440
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead=JSON.parse(JSON.stringify($json.lead??$json));if($json.assigned_rep_id){const reasons={1:'tier_1_service_country_match_lowest_workload',2:'tier_2_service_match_lowest_workload',3:'tier_3_country_match_lowest_workload',4:'tier_4_available_capacity_lowest_workload'};lead.routing={...lead.routing,assigned_sales_rep_id:$json.assigned_rep_id,assignment_reason:reasons[$json.candidate_tier],assignment_context:{selected_rep_name:$json.selected_rep_name,candidate_tier:$json.candidate_tier,current_load:$json.current_load,max_load:$json.max_load}}}for(const k of ['routing_event_type','routing_failure','sales_assignment_context','assignment_candidates','database_lead','workflow_lead'])delete lead[k];return [{json:lead}];"
+      },
+      "id": "2af7738e-4645-4aca-8203-fd2adb33466c",
+      "name": "Finalize Routing Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json));\nconst finalStatus = lead.qualification?.final_status ?? null;\nconst processingStatus = lead.processing?.status ?? null;\nconst nextAction = lead.crm?.next_action ?? null;\nconst assignedRepId = lead.routing?.assigned_sales_rep_id ?? null;\nlet required = false;\nlet reason = 'followup_not_required';\nif (finalStatus === 'qualified' && processingStatus === 'processing' && nextAction === 'sales_follow_up' && assignedRepId !== null) {\n  required = true;\n  reason = 'qualified_followup';\n} else if (finalStatus === 'nurture' && processingStatus === 'processing' && nextAction === 'start_nurture_sequence') {\n  required = true;\n  reason = 'nurture_followup';\n} else if (finalStatus === 'vip' || nextAction === 'await_manager_approval') {\n  reason = 'vip_waiting_approval';\n} else if (nextAction === 'manual_sales_assignment') {\n  reason = 'manual_sales_assignment';\n} else if (finalStatus === 'manual_review' || processingStatus === 'manual_review') {\n  reason = 'manual_review';\n} else if (finalStatus === 'unqualified' || lead.crm?.stage === 'closed') {\n  reason = 'unqualified_or_closed';\n} else if (processingStatus === 'completed') {\n  reason = 'completed';\n}\nlead.wf05_handoff = { required, reason };\nreturn [{ json: lead }];"
+      },
+      "id": "1f84e1e4-2541-4abb-81bb-8061715f776b",
+      "name": "Determine WF05 Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "555a478c-e8bb-44d7-bb06-fbb81f9914bc",
+              "leftValue": "={{ $json.wf05_handoff.required === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "42a4e3b1-f05c-4719-b622-765cff228033",
+      "name": "Follow-Up Required?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "oUiUDID7qsUOVgFO",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/oUiUDID7qsUOVgFO",
+          "cachedResultName": "WF05_followup_engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "fc42854f-7553-4971-889d-edc7205e2b9d",
+      "name": "Execute WF05 - Follow-Up Engine",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = JSON.parse(JSON.stringify($json));\ndelete lead.wf05_handoff;\nreturn [{ json: lead }];"
+      },
+      "id": "bb470224-62a9-4649-a88d-9afc530aca4b",
+      "name": "Finalize WF04 Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## WF05 Handoff\n\nWF04 invokes WF05 only for follow-up-eligible Qualified and Nurture leads.\n\nQualified requires:\n- successful sales assignment\n- processing status = processing\n- next_action = sales_follow_up\n\nNurture requires:\n- processing status = processing\n- next_action = start_nurture_sequence\n\nVIP awaiting manager approval, Manual Review, manual sales assignment, Unqualified, and completed leads do not enter WF05.\n\nWF05 owns follow-up sequence initialization and scheduled follow-up processing.\n\nSelect WF05 manually after import until an instance-specific workflow ID is available.",
+        "height": 430,
+        "width": 600,
+        "color": 4
+      },
+      "id": "c88f468e-6a96-474b-b2ba-22558d1cfdb3",
+      "name": "WF05 Handoff",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb j),u AS(UPDATE leads SET assigned_sales_rep_id=NULL,priority=j#>>'{routing,priority}',crm_stage=j#>>'{crm,stage}',next_action=j#>>'{crm,next_action}',processing_status=j#>>'{processing,status}',updated_at=now() FROM i WHERE leads.id=(j->>'lead_id')::uuid RETURNING leads.id),e AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload,created_at)SELECT u.id,j->>'routing_event_type','WF04_routing_crm',$2,jsonb_build_object('final_status',j#>>'{qualification,final_status}','route',j#>>'{routing,route}','priority',j#>>'{routing,priority}','next_action',j#>>'{crm,next_action}'),now()FROM u,i WHERE NOT EXISTS(SELECT 1 FROM lead_events x WHERE x.lead_id=u.id AND x.event_type=j->>'routing_event_type' AND x.workflow_name='WF04_routing_crm'))SELECT i.j lead FROM i,u;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "126bbbe9-a9e8-41b1-90a0-739e5e99695c",
+      "name": "Persist Routing State1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        256,
+        1648
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -41,7 +719,320 @@
       "main": [
         [
           {
-            "node": "Return WF04 Stub Result",
+            "node": "Validate WF03 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate WF03 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Load Canonical Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Canonical Lead": {
+      "main": [
+        [
+          {
+            "node": "Merge Authoritative Routing State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Authoritative Routing State": {
+      "main": [
+        [
+          {
+            "node": "Determine Routing Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Routing Path": {
+      "main": [
+        [
+          {
+            "node": "Switch / Routing Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch / Routing Branch": {
+      "main": [
+        [
+          {
+            "node": "Ensure VIP Manager Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Sales Assignment Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Nurture Route",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Unqualified Route",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Human Review Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure VIP Manager Approval": {
+      "main": [
+        [
+          {
+            "node": "Prepare VIP Pending Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare VIP Pending Approval": {
+      "main": [
+        [
+          {
+            "node": "Persist VIP Routing State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist VIP Routing State": {
+      "main": [
+        [
+          {
+            "node": "Finalize Routing Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Sales Assignment Context": {
+      "main": [
+        [
+          {
+            "node": "Find Eligible Sales Reps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Eligible Sales Reps": {
+      "main": [
+        [
+          {
+            "node": "Select Best Sales Rep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Best Sales Rep": {
+      "main": [
+        [
+          {
+            "node": "Rep Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rep Found?": {
+      "main": [
+        [
+          {
+            "node": "Persist Sales Assignment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Assignment Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Sales Assignment": {
+      "main": [
+        [
+          {
+            "node": "Assignment Persisted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assignment Persisted?": {
+      "main": [
+        [
+          {
+            "node": "Finalize Routing Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Assignment Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Assignment Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Persist Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Finalize Routing Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Nurture Route": {
+      "main": [
+        [
+          {
+            "node": "Persist Routing State1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Unqualified Route": {
+      "main": [
+        [
+          {
+            "node": "Persist Routing State1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Human Review Route": {
+      "main": [
+        [
+          {
+            "node": "Persist Routing State1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Routing Handoff": {
+      "main": [
+        [
+          {
+            "node": "Determine WF05 Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine WF05 Handoff": {
+      "main": [
+        [
+          {
+            "node": "Follow-Up Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Required?": {
+      "main": [
+        [
+          {
+            "node": "Execute WF05 - Follow-Up Engine",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize WF04 Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute WF05 - Follow-Up Engine": {
+      "main": [
+        [
+          {
+            "node": "Finalize WF04 Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Routing State1": {
+      "main": [
+        [
+          {
+            "node": "Finalize Routing Handoff",
             "type": "main",
             "index": 0
           }
@@ -49,13 +1040,18 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "b7c918c2-a2d6-4c28-81b1-d7806965be75",
+  "versionId": "42cf3533-ecd2-4b50-8cc4-5d3556cbd384",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
   },
+  "nodeGroups": [],
+  "id": "2EkR94npT3H4ASXO",
   "tags": []
 }

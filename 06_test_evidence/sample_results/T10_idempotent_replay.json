@@ -1,0 +1,9 @@
+[
+  {
+    "status": "already_processed",
+    "operation": "lead_intake",
+    "lead_id": "78a825dd-e427-4eae-94dd-2ea85fa9835b",
+    "idempotency_key": "website:evidence-t10-idempotent-001",
+    "response_reference": "362acc0e-48ac-44e5-910e-6b203416d306"
+  }
+]

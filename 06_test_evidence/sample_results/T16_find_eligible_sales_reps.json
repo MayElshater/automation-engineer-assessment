@@ -1,0 +1,119 @@
+[
+  {
+    "lead": {
+      "crm": {},
+      "source": {
+        "type": "website",
+        "external_id": "evidence-t16-qualified-routing-002",
+        "received_at": "2026-08-14T20:04:15.298+00:00"
+      },
+      "contact": {
+        "name": "T16 Qualified Routing Lead",
+        "consent": true,
+        "email_raw": "t16.qualified.002@example.com",
+        "phone_raw": "+201055516017",
+        "email_normalized": "t16.qualified.002@example.com",
+        "phone_normalized": "+201055516017"
+      },
+      "lead_id": "d5551356-032c-4e52-8ad7-6649c006a4b0",
+      "request": {
+        "message": "We need an urgent automation project proposal for implementation this quarter.",
+        "urgency": "unknown"
+      },
+      "routing": {
+        "route": "qualified",
+        "priority": "high",
+        "service_category": "AI Automation",
+        "assignment_reason": null,
+        "assigned_sales_rep_id": null
+      },
+      "business": {
+        "country": "Egypt",
+        "industry": "Technology",
+        "company_name": "Delta Systems",
+        "company_size": 240,
+        "service_interest": "AI Automation",
+        "strategic_account": false
+      },
+      "identity": {
+        "status": "unique",
+        "confidence": 0,
+        "matched_lead_id": null,
+        "identity_conflict": false
+      },
+      "metadata": {
+        "schema_version": "1.0",
+        "workflow_version": "1.0"
+      },
+      "processing": {
+        "status": "processing",
+        "last_error": null,
+        "updated_at": "2026-08-14T20:04:16.727Z",
+        "retry_count": 0,
+        "next_workflow": null,
+        "idempotency_key": "website:evidence-t16-qualified-routing-002",
+        "current_workflow": "WF04_routing_crm"
+      },
+      "data_quality": {
+        "is_complete": true,
+        "missing_fields": [],
+        "validation_status": "valid"
+      },
+      "qualification": {
+        "is_vip": false,
+        "reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+        "ai_reason": "The lead clearly states an urgent need for implementation within the quarter and specifies a clear interest in AI automation, coming from a mid-sized technology company.",
+        "rule_score": 85,
+        "final_status": "qualified",
+        "ai_confidence": 0.95,
+        "score_breakdown": {
+          "intent": 15,
+          "urgency": 15,
+          "geography": 10,
+          "company_size": 20,
+          "service_value": 25,
+          "strategic_account": 0,
+          "data_quality_penalty": 0
+        },
+        "ai_classification": "high_potential",
+        "rule_classification": "qualified"
+      },
+      "sales_assignment_context": {
+        "country": "Egypt",
+        "urgency": "unknown",
+        "priority": "high",
+        "service_category": "AI Automation"
+      }
+    },
+    "candidates": [
+      {
+        "id": "58432239-bd30-4881-9324-d2763433d4e6",
+        "name": "T16 Rep A",
+        "max_load": 10,
+        "current_load": 2,
+        "candidate_tier": 1
+      },
+      {
+        "id": "00b6f723-b587-4eca-af06-c23d6fb3423a",
+        "name": "T16 Rep B",
+        "max_load": 10,
+        "current_load": 6,
+        "candidate_tier": 1
+      },
+      {
+        "id": "e37c378a-c11d-4a42-962f-f4ce2749b0be",
+        "name": "T16 Rep C",
+        "max_load": 10,
+        "current_load": 0,
+        "candidate_tier": 2
+      },
+      {
+        "id": "038c07c7-d1ce-4efe-acea-e34b4a6f2906",
+        "name": "T16 Rep D",
+        "max_load": 10,
+        "current_load": 0,
+        "candidate_tier": 3
+      }
+    ]
+  }
+]

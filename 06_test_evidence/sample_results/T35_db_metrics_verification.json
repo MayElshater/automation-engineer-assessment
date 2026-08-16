@@ -1,0 +1,16 @@
+[
+  {
+    "total_leads": 27,
+    "qualified_leads": 5,
+    "nurture_leads": 4,
+    "manual_review_leads": 11,
+    "failed_dlq_items": 1,
+    "pending_dlq_items": 0,
+    "resolved_dlq_items": 5,
+    "duplicates": 3,
+    "sla_breached_leads": 4,
+    "booked_leads": 1,
+    "won_leads": 1,
+    "active_followups": 0
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "6b9dc65d-cb87-48cb-b3b6-57c27114cb26",
+    "name": "T36 End-to-End Happy Path Lead",
+    "final_status": "qualified",
+    "crm_stage": "won",
+    "next_action": "handoff_to_delivery",
+    "processing_status": "completed",
+    "assigned_sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a",
+    "priority": "high"
+  }
+]

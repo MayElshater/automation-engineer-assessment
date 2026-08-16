@@ -22,3 +22,6 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+06_test_evidence/records/T36_End-to-End_Happy_Path_Demo.mp4
+06_test_evidence/records/T32_Idempotent_replay_after_partial_success-demo.mp4

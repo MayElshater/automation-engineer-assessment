@@ -1,0 +1,178 @@
+[
+  {
+    "event_type": "normalized",
+    "workflow_name": "WF02_validation_identity",
+    "payload": {
+      "email_present": true,
+      "phone_present": true
+    },
+    "created_at": "2026-08-16 09:51:51.906+00"
+  },
+  {
+    "event_type": "data_completed",
+    "workflow_name": "WF02_validation_identity",
+    "payload": {
+      "validation_status": "valid"
+    },
+    "created_at": "2026-08-16 09:51:51.926+00"
+  },
+  {
+    "event_type": "enrichment_completed",
+    "workflow_name": "WF03_enrichment_qualification",
+    "payload": {
+      "status": "completed",
+      "confidence": 0.6,
+      "merged_fields": [
+        "company_size",
+        "industry"
+      ]
+    },
+    "created_at": "2026-08-16 09:51:52.648068+00"
+  },
+  {
+    "event_type": "qualification_completed",
+    "workflow_name": "WF03_enrichment_qualification",
+    "payload": {
+      "stage": "deterministic_rule_result",
+      "rule_score": 70,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 10,
+        "geography": 10,
+        "company_size": 10,
+        "service_value": 25,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "scoring_context": {
+        "intent_basis": "clear_business_requirement",
+        "urgency_basis": "medium",
+        "service_value_tier": "high",
+        "configuration_notes": [
+          "Demo business configuration treats AI Automation and Enterprise Automation as high-value services; CRM Automation and Workflow Automation as medium-value services.",
+          "Demo target markets are Egypt, Saudi Arabia, and UAE, including the configured country-code/name variants.",
+          "Intent and urgency keyword lists are centralized assessment/demo defaults and do not use Gemini."
+        ]
+      },
+      "rule_classification": "qualified"
+    },
+    "created_at": "2026-08-16 09:51:52.697252+00"
+  },
+  {
+    "event_type": "qualification_completed",
+    "workflow_name": "WF03_enrichment_qualification",
+    "payload": {
+      "reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+      "conflict": false,
+      "rule_score": 70,
+      "final_status": "qualified",
+      "ai_confidence": 0.95,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 10,
+        "geography": 10,
+        "company_size": 10,
+        "service_value": 25,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "ai_classification": "high_potential",
+      "rule_classification": "qualified"
+    },
+    "created_at": "2026-08-16 09:51:53.651134+00"
+  },
+  {
+    "event_type": "sales_assigned",
+    "workflow_name": "WF04_routing_crm",
+    "payload": {
+      "rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a",
+      "country": "Egypt",
+      "priority": "high",
+      "service_category": "AI Automation",
+      "assignment_reason": "tier_1_service_country_match_lowest_workload"
+    },
+    "created_at": "2026-08-16 09:51:53.819995+00"
+  },
+  {
+    "event_type": "followup_sequence_initialized",
+    "workflow_name": "WF05_followup_engine",
+    "payload": {
+      "step_count": 3,
+      "sequence_type": "qualified_followup",
+      "sequence_started_at": "2026-08-16T09:51:53.939+00:00"
+    },
+    "created_at": "2026-08-16 09:51:53.954253+00"
+  },
+  {
+    "event_type": "followup_executed",
+    "workflow_name": "WF05_followup_engine",
+    "payload": {
+      "channel": "simulated",
+      "executed_at": "2026-08-16T09:51:54.099124+00:00",
+      "step_number": 1,
+      "scheduled_at": "2026-08-16T09:51:53.939+00:00",
+      "sequence_type": "qualified_followup",
+      "idempotency_key": "followup:6b9dc65d-cb87-48cb-b3b6-57c27114cb26:qualified_followup:1"
+    },
+    "created_at": "2026-08-16 09:51:54.099124+00"
+  },
+  {
+    "event_type": "booking_followups_cancelled",
+    "workflow_name": "WF06_booking_conversion",
+    "payload": {
+      "event_id": "evidence-t36-booked-001",
+      "cancelled_count": 2,
+      "external_booking_id": "t36-meeting-001"
+    },
+    "created_at": "2026-08-16 10:00:30.311968+00"
+  },
+  {
+    "event_type": "booking_created",
+    "workflow_name": "WF06_booking_conversion",
+    "payload": {
+      "source": "calendar",
+      "event_id": "evidence-t36-booked-001",
+      "booking_id": "d880fa0a-f2c4-4375-8f0e-d21b4347c84c",
+      "meeting_at": "2026-08-20T10:00:00+00:00",
+      "external_booking_id": "t36-meeting-001",
+      "assigned_sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a"
+    },
+    "created_at": "2026-08-16 10:00:30.311968+00"
+  },
+  {
+    "event_type": "sales_rep_booking_notification_recorded",
+    "workflow_name": "WF06_booking_conversion",
+    "payload": {
+      "type": "booking_booked",
+      "channel": "simulated",
+      "lead_id": "6b9dc65d-cb87-48cb-b3b6-57c27114cb26",
+      "booking_id": "t36-meeting-001",
+      "meeting_at": "2026-08-20T10:00:00+00:00",
+      "sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a"
+    },
+    "created_at": "2026-08-16 10:00:30.355368+00"
+  },
+  {
+    "event_type": "lead_converted",
+    "workflow_name": "WF06_booking_conversion",
+    "payload": {
+      "event_id": "evidence-t36-converted-001",
+      "booking_id": "d880fa0a-f2c4-4375-8f0e-d21b4347c84c",
+      "external_booking_id": "t36-meeting-001"
+    },
+    "created_at": "2026-08-16 10:03:31.764242+00"
+  },
+  {
+    "event_type": "sales_rep_booking_notification_recorded",
+    "workflow_name": "WF06_booking_conversion",
+    "payload": {
+      "type": "booking_converted",
+      "channel": "simulated",
+      "lead_id": "6b9dc65d-cb87-48cb-b3b6-57c27114cb26",
+      "booking_id": "t36-meeting-001",
+      "meeting_at": "2026-08-20T10:00:00+00:00",
+      "sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a"
+    },
+    "created_at": "2026-08-16 10:03:31.801033+00"
+  }
+]

@@ -1,9 +1,12 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="_jtI08_c7tK5P1uBa2WH">
-    <mxGraphModel dx="1710" dy="465" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="3307" dy="1329" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="RLJOq1EuAMdQ4Wrp5vjy-5" parent="1" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;shapeInside=1;fixedSize=1;" value="" vertex="1">
+          <mxGeometry height="230" width="410" x="70" y="1695" as="geometry" />
+        </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-31" parent="1" style="whiteSpace=wrap;html=1;" value="" vertex="1">
           <mxGeometry height="1580" width="680" x="-30" y="10" as="geometry" />
         </mxCell>
@@ -97,7 +100,7 @@
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-20" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;AI Classification Service&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;b&gt;[Gemini API]&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Analyzes free-text&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;needs and returns:&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;ul&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Intent&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Urgency&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Classification&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Confidence&amp;nbsp;&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="270" width="180" x="190" y="890" as="geometry" />
         </mxCell>
-        <mxCell id="6OMTrXXFlSkq2cE_aYnM-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;Integration Services&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;b&gt;[FastAPI]&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Simulates / wraps:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;ul&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Enrichment API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Messaging API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Booking API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Availability API&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="6OMTrXXFlSkq2cE_aYnM-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;Integration Services&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;b&gt;[FastAPI]&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Simulates / wraps:&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;ul&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Enrichment API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Messaging API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Booking API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Availability API&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;CRM Mock / Adapter API&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="270" width="180" x="390" y="890" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-22" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
@@ -142,58 +145,65 @@
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-33" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;CRM API&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="80" x="280" y="1620" as="geometry" />
         </mxCell>
-        <mxCell id="6OMTrXXFlSkq2cE_aYnM-40" edge="1" parent="1" source="6OMTrXXFlSkq2cE_aYnM-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;">
+        <mxCell id="6OMTrXXFlSkq2cE_aYnM-40" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="281" y="1850" />
-              <mxPoint x="281" y="1850" />
+              <mxPoint x="271" y="1995" />
+              <mxPoint x="271" y="1995" />
             </Array>
-            <mxPoint x="281" y="1880" as="targetPoint" />
+            <mxPoint x="271" y="1925" as="sourcePoint" />
+            <mxPoint x="271" y="2025" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="6OMTrXXFlSkq2cE_aYnM-34" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Odoo CRM&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Central System of&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Record&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="80" width="220" x="171" y="1700" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-42" edge="1" parent="1" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;" value="">
           <mxGeometry relative="1" width="100" as="geometry">
             <Array as="points" />
-            <mxPoint x="171" y="1820" as="sourcePoint" />
-            <mxPoint x="171" y="1880" as="targetPoint" />
+            <mxPoint x="161" y="1965" as="sourcePoint" />
+            <mxPoint x="161" y="2025" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-43" edge="1" parent="1" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;" value="">
           <mxGeometry relative="1" width="100" as="geometry">
             <Array as="points" />
-            <mxPoint x="392" y="1820" as="sourcePoint" />
-            <mxPoint x="392" y="1880" as="targetPoint" />
+            <mxPoint x="382" y="1965" as="sourcePoint" />
+            <mxPoint x="382" y="2025" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-44" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
-            <mxPoint x="170" y="1820" as="sourcePoint" />
-            <mxPoint x="390" y="1820" as="targetPoint" />
+            <mxPoint x="160" y="1965" as="sourcePoint" />
+            <mxPoint x="380" y="1965" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-45" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;Sales Rep&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;Handles&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;qualified&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font size=&quot;3&quot;&gt;leads&lt;/font&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="130" width="110" x="110" y="1890" as="geometry" />
+          <mxGeometry height="130" width="110" x="100" y="2035" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-46" parent="1" style="whiteSpace=wrap;html=1;align=left;" value="&lt;div style=&quot;text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;Sales Manager&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;VIP approval&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;/ rejection&lt;/span&gt;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="130" width="110" x="226" y="1890" as="geometry" />
+          <mxGeometry height="130" width="110" x="216" y="2035" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-47" parent="1" style="whiteSpace=wrap;html=1;align=left;" value="&lt;div style=&quot;text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;Operations / Admin&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Manual&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;review&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;/&amp;nbsp;&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;reprocessing&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="130" width="110" x="342" y="1890" as="geometry" />
+          <mxGeometry height="130" width="110" x="332" y="2035" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-48" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;SHARED PLATFORM / RELIABILITY SERVICES&lt;/font&gt;" vertex="1">
-          <mxGeometry height="50" width="410" x="80" y="2050" as="geometry" />
+          <mxGeometry height="50" width="410" x="70" y="2194" as="geometry" />
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-50" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
-            <mxPoint x="90" y="2100" as="sourcePoint" />
-            <mxPoint x="474" y="2099" as="targetPoint" />
+            <mxPoint x="80" y="2244" as="sourcePoint" />
+            <mxPoint x="464" y="2243" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="6OMTrXXFlSkq2cE_aYnM-51" parent="1" style="whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Retry Policy&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Exponential Backoff&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Dead Letter Queue&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Safe Manual Reprocessing&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Idempotency Protection&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Audit Event Logging&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;SLA Tracking&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Operational Monitoring&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Alerts&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="360" width="340" x="110" y="2140" as="geometry" />
+          <mxGeometry height="360" width="340" x="100" y="2284" as="geometry" />
+        </mxCell>
+        <mxCell id="RLJOq1EuAMdQ4Wrp5vjy-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Assessment&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;Mock CRM API&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font size=&quot;3&quot;&gt;[FastAPI]&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="160" x="110" y="1775" as="geometry" />
+        </mxCell>
+        <mxCell id="RLJOq1EuAMdQ4Wrp5vjy-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 18px;&quot;&gt;Production&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;Odoo Adapter&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;[External API]&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="160" x="290" y="1775" as="geometry" />
+        </mxCell>
+        <mxCell id="RLJOq1EuAMdQ4Wrp5vjy-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;CRM Integration Interface&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="151" y="1715" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

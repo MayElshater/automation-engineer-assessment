@@ -1,0 +1,106 @@
+[
+  {
+    "crm": {
+      "stage": "qualified",
+      "next_action": "sales_follow_up"
+    },
+    "source": {
+      "type": "csv",
+      "external_id": "csv-evidence-t36-happy-001",
+      "received_at": "2026-08-16T09:51:51.859+00:00"
+    },
+    "contact": {
+      "name": "T36 End-to-End Happy Path Lead",
+      "consent": true,
+      "email_raw": "t36.happy.path@example.com",
+      "phone_raw": "+201155360036",
+      "email_normalized": "t36.happy.path@example.com",
+      "phone_normalized": "+201155360036"
+    },
+    "lead_id": "6b9dc65d-cb87-48cb-b3b6-57c27114cb26",
+    "request": {
+      "message": "We are looking for an AI automation solution for lead qualification, CRM routing, customer follow-up, booking, and sales operations. We are ready to start this month.",
+      "urgency": "unknown"
+    },
+    "routing": {
+      "route": "qualified",
+      "priority": "high",
+      "service_category": "AI Automation",
+      "assignment_reason": "tier_1_service_country_match_lowest_workload",
+      "assignment_context": {
+        "max_load": 10,
+        "current_load": 8,
+        "candidate_tier": 1,
+        "selected_rep_name": "T16 Rep B"
+      },
+      "assigned_sales_rep_id": "00b6f723-b587-4eca-af06-c23d6fb3423a"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Unknown",
+      "company_name": "Nile Intelligent Systems",
+      "company_size": 50,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "follow_up": {
+      "step": 1,
+      "stopped": false,
+      "sequence": "qualified_followup",
+      "stop_reason": null,
+      "state": "waiting"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-16T09:51:54.146Z",
+      "retry_count": 0,
+      "next_workflow": "WF05_followup_engine",
+      "idempotency_key": "csv:csv-evidence-t36-happy-001",
+      "current_workflow": "WF05_followup_engine"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "qualification": {
+      "is_vip": false,
+      "reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+      "ai_reason": "The lead clearly articulates specific business needs across multiple operational areas and explicitly states an immediate timeline to start this month.",
+      "rule_score": 70,
+      "final_status": "qualified",
+      "ai_confidence": 0.95,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 10,
+        "geography": 10,
+        "company_size": 10,
+        "service_value": 25,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "ai_classification": "high_potential",
+      "rule_classification": "qualified"
+    },
+    "outbound_action": {
+      "channel": "simulated",
+      "lead_id": "6b9dc65d-cb87-48cb-b3b6-57c27114cb26",
+      "operation": "followup_message",
+      "step_number": 1,
+      "sequence_type": "qualified_followup",
+      "idempotency_key": "followup:6b9dc65d-cb87-48cb-b3b6-57c27114cb26:qualified_followup:1",
+      "message_template": "Sales follow-up reminder for qualified lead."
+    }
+  }
+]

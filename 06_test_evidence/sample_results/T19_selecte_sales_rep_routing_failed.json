@@ -1,0 +1,87 @@
+[
+  {
+    "crm": {},
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t19-no-eligible-rep-001",
+      "received_at": "2026-08-15T00:10:49.298+00:00"
+    },
+    "contact": {
+      "name": "T19 No Eligible Rep Lead",
+      "consent": true,
+      "email_raw": "t19.no.rep@example.com",
+      "phone_raw": "+201055519019",
+      "email_normalized": "t19.no.rep@example.com",
+      "phone_normalized": "+201055519019"
+    },
+    "lead_id": "45341200-185e-4ace-86ff-27b1a0bce19a",
+    "request": {
+      "message": "We need an urgent automation implementation proposal this quarter.",
+      "urgency": "unknown"
+    },
+    "routing": {
+      "route": "qualified",
+      "priority": "high",
+      "service_category": "AI Automation",
+      "assignment_reason": "no_eligible_sales_rep",
+      "assigned_sales_rep_id": null
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Technology",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-15T00:10:50.991Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t19-no-eligible-rep-001",
+      "current_workflow": "WF04_routing_crm"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "qualification": {
+      "is_vip": false,
+      "reason": "deterministic_ai_agreement: deterministic classification qualified preserved.",
+      "ai_reason": "The lead explicitly states an urgent need for an AI automation implementation proposal within the current quarter, representing a clear business requirement from a mid-sized technology company.",
+      "rule_score": 85,
+      "final_status": "qualified",
+      "ai_confidence": 0.95,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 15,
+        "geography": 10,
+        "company_size": 20,
+        "service_value": 25,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "ai_classification": "high_potential",
+      "rule_classification": "qualified"
+    },
+    "sales_assignment_context": {
+      "country": "Egypt",
+      "urgency": "unknown",
+      "priority": "high",
+      "service_category": "AI Automation"
+    }
+  }
+]

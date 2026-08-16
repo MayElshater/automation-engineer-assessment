@@ -1,0 +1,32 @@
+[
+  {
+    "id": "d5b66324-0e83-4daa-8b57-5b94b5a47475",
+    "lead_id": "e34e7601-f00f-432b-ab3e-d473fac081b9",
+    "workflow": "WF04_routing_crm",
+    "operation": "crm_sync",
+    "payload": {
+      "crm_stage": "qualified",
+      "next_action": "sales_follow_up",
+      "idempotency_key": "t30:crm_sync:e34e7601-f00f-432b-ab3e-d473fac081b9"
+    },
+    "error_type": "http_503",
+    "error_message": "CRM service remained unavailable after maximum recovery attempts",
+    "attempt_count": 3,
+    "status": "pending",
+    "created_at": "2026-08-15 23:41:40.962469+00",
+    "reprocessed_at": null
+  },
+
+
+  {
+    "id": "d5b66324-0e83-4daa-8b57-5b94b5a47475",
+    "lead_id": "e34e7601-f00f-432b-ab3e-d473fac081b9",
+    "workflow": "WF04_routing_crm",
+    "operation": "crm_sync",
+    "error_type": "http_503",
+    "attempt_count": 3,
+    "status": "failed",
+    "created_at": "2026-08-15 23:41:40.962469+00",
+    "reprocessed_at": "2026-08-15 23:46:27.42255+00"
+  }
+]

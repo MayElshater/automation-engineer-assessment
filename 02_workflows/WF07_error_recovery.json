@@ -1,0 +1,1384 @@
+{
+  "name": "WF07_error_recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF07 Responsibility\nScheduled and manual recovery share one state-aware, idempotent path.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "a4b304e1-d5c8-4008-97c4-c0f604ced47f",
+      "name": "WF07 Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## DLQ Contract\nAutomatic runs select only pending work. Atomic claims move pending to reprocessing; outcomes are resolved, pending, or failed. Targeted manual recovery can return one failed row to pending without resetting attempt history.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "f24e0ee8-8669-4f5c-8b2a-68c7596b95f5",
+      "name": "DLQ Contract",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Failure Classification\nTimeout, rate-limit, network, and temporary provider errors are transient. Malformed or invalid input is permanent. Configuration and unknown failures require manual review.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "9e4ca11d-a16b-4890-a3aa-d9f88a3327ed",
+      "name": "Failure Classification",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Idempotent Replay Protection\nAll candidates, including targeted failed rows, pass through idempotency and persisted booking/follow-up checks. Completed operations resolve without repeated side effects.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "a2404c48-4693-49e3-90b5-cfa0a5b81ace",
+      "name": "Idempotent Replay Protection",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Retry / Backoff Policy\nMaximum 3 attempts. Failed transient work returns to pending for a later five-minute scheduler cycle. Exact exponential delay is deferred because no next_retry_at exists.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "d7baa1a3-d82e-452a-b8cf-b9f92a5283de",
+      "name": "Retry / Backoff Policy",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Recovery Operation Boundary\nExplicit simulated CRM/message/API handlers; booking/follow-up inspect persisted state.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "cac38b5a-663f-4798-a4c5-3a124a3d8c02",
+      "name": "Recovery Operation Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Manual Reprocessing Safety\nConfigure manual_dlq_id in Prepare Manual Recovery Selection to target one pending or failed row; null selects oldest pending. Resolved and reprocessing rows are excluded. Replay protection always applies.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "68c2c6a4-97a4-4279-9359-2f0f588f9574",
+      "name": "Manual Reprocessing Safety",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2784,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Audit Trail\nAudit events are inserted only for non-null lead_id.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "24093a76-c379-4e1c-970a-ebf63dbadda0",
+      "name": "Audit Trail",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3248,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Known Limitations\nThe current DLQ schema has no claimed_at or lease_expires_at. If an execution crashes after claiming a row, it may remain in reprocessing and require operator intervention. Automatic stale-claim reset is intentionally not implemented because created_at is not a safe claim-age signal. Production should add claimed_at / lease_expires_at.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "20d508f9-44a8-4cbc-8dca-09dc09a947c5",
+      "name": "Known Limitations",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Test Scope\nFuture coverage: T29 transient recovery, T30 exhaustion, T31 manual DLQ recovery, and T32 idempotent replay after partial success. No test-specific nodes are included.",
+        "height": 180,
+        "width": 430
+      },
+      "id": "a2c17efa-2daf-4e98-8de4-4dbf1c1a8491",
+      "name": "Test Scope",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4160,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3b5d61a3-7e09-4187-a2a8-814e0b7b9b8b",
+      "name": "Manual Recovery Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "068b6bad-279d-478a-ac41-b270b3d7f572",
+      "name": "Schedule Recovery Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS (\n  SELECT\n    $1::jsonb AS c,\n    $1::jsonb #>> '{recovery_selection,recovery_mode}' AS mode,\n    NULLIF(\n      $1::jsonb #>> '{recovery_selection,manual_dlq_id}',\n      ''\n    )::uuid AS target\n),\n\nreopened AS (\n  UPDATE dead_letter_queue d\n  SET status = 'pending'\n  FROM i\n  WHERE i.mode = 'manual_targeted'\n    AND d.id = i.target\n    AND d.status = 'failed'\n  RETURNING d.*\n),\n\ncandidate AS (\n\n  -- If targeted failed row was reopened in this execution,\n  -- use UPDATE ... RETURNING directly.\n  SELECT r.*\n  FROM reopened r\n\n  UNION ALL\n\n  -- If targeted row was already pending, select it directly.\n  SELECT d.*\n  FROM dead_letter_queue d\n  CROSS JOIN i\n  WHERE i.mode = 'manual_targeted'\n    AND d.id = i.target\n    AND d.status = 'pending'\n    AND NOT EXISTS (SELECT 1 FROM reopened)\n\n  UNION ALL\n\n  -- Scheduled/manual-oldest recovery.\n  SELECT d.*\n  FROM dead_letter_queue d\n  CROSS JOIN i\n  WHERE i.mode IN ('scheduled', 'manual_oldest')\n    AND d.status = 'pending'\n  ORDER BY created_at, id\n  LIMIT 1\n)\n\nSELECT jsonb_build_object(\n  'item',\n  (SELECT to_jsonb(candidate) FROM candidate LIMIT 1),\n  'recovery_mode',\n  i.mode,\n  'manual_dlq_id',\n  i.target\n) AS context\nFROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "2bee2ed7-c164-4a3b-b8fb-8f84de169f7a",
+      "name": "Find Pending DLQ Work",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        560,
+        816
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "avail",
+              "leftValue": "={{ $json.context.item !== null }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8c440c35-c0ab-4597-9916-fea9e3dfb441",
+      "name": "DLQ Item Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return[{json:{status:'no_recovery_work'}}];"
+      },
+      "id": "18472778-7b19-49e7-b778-53f3d64d4658",
+      "name": "Finalize No Work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb c),u AS(UPDATE dead_letter_queue d SET status='reprocessing' FROM i WHERE d.id=(i.c#>>'{context,item,id}')::uuid AND d.status='pending' RETURNING d.*) SELECT jsonb_build_object('claimed',exists(select 1 from u),'item',(select to_jsonb(u) from u),'recovery_mode', i.c#>>'{context,recovery_mode}','manual_dlq_id', i.c#>>'{context,manual_dlq_id}') context FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "7de37057-3d6a-444b-916c-21504c16d625",
+      "name": "Claim DLQ Item",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1120,
+        800
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "claimed",
+              "leftValue": "={{ $json.context.claimed === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "58faa380-b406-4fb5-a9a9-a288a52fc648",
+      "name": "Claim Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return[{json:{status:'already_claimed',side_effects_executed:false}}];"
+      },
+      "id": "0bd5223d-a66f-4938-9453-ec7d66083e7c",
+      "name": "Finalize Already Claimed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json.context.item,p=d.payload&&typeof d.payload==='object'&&!Array.isArray(d.payload)?d.payload:{};\nreturn [{json:{recovery:{dlq_id:d.id,lead_id:d.lead_id??null,workflow:d.workflow,operation:d.operation,error_type:d.error_type,error_message:d.error_message,attempt_count:Number(d.attempt_count||0),max_attempts:3,payload:p,idempotency_key:typeof p.idempotency_key==='string'&&p.idempotency_key?p.idempotency_key:null,recovery_mode:$json.context.recovery_mode,manual_dlq_id:$json.context.manual_dlq_id??null}}}];"
+      },
+      "id": "92622e46-2617-4f71-ab4f-637478d47b34",
+      "name": "Normalize Recovery Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let e=String($json.recovery.error_type||'').toLowerCase(),t=['timeout','api_timeout','network_error','connection_reset','rate_limit','http_429','service_unavailable','http_502','http_503','http_504','temporary_unavailable'],p=['malformed_payload','invalid_payload','validation_error','unsupported_operation','missing_required_field'],g=['missing_credentials','authentication_failed','forbidden','invalid_configuration'],c=t.includes(e)?'transient':p.includes(e)?'permanent':g.includes(e)?'configuration':'unknown';return[{json:{...$json,failure_classification:{class:c,retryable:c==='transient',reason:'classified_'+c}}}];"
+      },
+      "id": "5d29214f-d54f-44af-b557-cd1fd7c342a5",
+      "name": "Classify Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb c),k AS(SELECT x.* FROM idempotency_keys x,i WHERE x.key=i.c#>>'{recovery,idempotency_key}' LIMIT 1),b AS(SELECT x.* FROM bookings x,i WHERE x.id::text=i.c#>>'{recovery,payload,booking_id}' LIMIT 1),f AS(SELECT x.* FROM followups x,i WHERE x.id::text=i.c#>>'{recovery,payload,followup_id}' OR x.idempotency_key=i.c#>>'{recovery,idempotency_key}' LIMIT 1) SELECT jsonb_build_object('base',i.c,'state',jsonb_build_object('idempotency_key',i.c#>>'{recovery,idempotency_key}','status',case when i.c#>>'{recovery,idempotency_key}' is null then null when k.key is null then 'missing' else k.status end,'response_reference',k.response_reference,'expires_at',k.expires_at,'already_completed',coalesce(k.status='completed',false)),'booking',(select to_jsonb(b) from b),'followup',(select to_jsonb(f) from f)) context FROM i LEFT JOIN k ON true;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "8d654539-2721-4ae3-a871-b476eff1855e",
+      "name": "Load Original Operation State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1888,
+        1088
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let x=$json.context,b=x.base,r=b.recovery,f=b.failure_classification,s=x.state,d=s.already_completed?'already_completed':f.class==='transient'&&r.attempt_count<r.max_attempts?'retryable':f.class==='permanent'?'permanent':f.class==='configuration'?'manual_required':r.attempt_count>=r.max_attempts?'exhausted':'manual_required';return[{json:{...b,original_operation_state:s,booking_state:x.booking,followup_state:x.followup,recovery_decision:{decision:d,reason:d,safe_to_execute:d==='retryable'}}}];"
+      },
+      "id": "359f8f9c-94b0-495a-9c77-52faf2c68a63",
+      "name": "Determine Recovery Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ds0",
+                    "leftValue": "={{ $json.recovery_decision.decision }}",
+                    "rightValue": "already_completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "already_completed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ds1",
+                    "leftValue": "={{ $json.recovery_decision.decision }}",
+                    "rightValue": "retryable",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "retryable"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ds2",
+                    "leftValue": "={{ $json.recovery_decision.decision }}",
+                    "rightValue": "permanent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "permanent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ds3",
+                    "leftValue": "={{ $json.recovery_decision.decision }}",
+                    "rightValue": "exhausted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "exhausted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ds4",
+                    "leftValue": "={{ $json.recovery_decision.decision }}",
+                    "rightValue": "manual_required",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "manual_required"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "73a57efd-1329-433e-84ae-115776b07de8",
+      "name": "Recovery Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2464,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const attempt=$json.recovery.attempt_count+1;\nreturn [{json:{...$json,recovery_attempt:{attempt,retry_policy:{strategy:'scheduler_driven',scheduler_interval_minutes:5,retry_on_next_cycle:attempt<$json.recovery.max_attempts}}}}];"
+      },
+      "id": "4b4ef220-5cc3-4649-b265-fbbc9b9bd87d",
+      "name": "Prepare Recovery Attempt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "os0",
+                    "leftValue": "={{ $json.recovery.operation }}",
+                    "rightValue": "crm_sync",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "crm_sync"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "os1",
+                    "leftValue": "={{ $json.recovery.operation }}",
+                    "rightValue": "outbound_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "outbound_message"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "os2",
+                    "leftValue": "={{ $json.recovery.operation }}",
+                    "rightValue": "booking_event",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "booking_event"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "os3",
+                    "leftValue": "={{ $json.recovery.operation }}",
+                    "rightValue": "followup_execution",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "followup_execution"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "os4",
+                    "leftValue": "={{ $json.recovery.operation }}",
+                    "rightValue": "generic_api_call",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generic_api_call"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "a9f01d94-38af-4da5-8b3a-54ae6e397967",
+      "name": "Recovery Operation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2464,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let j=$json,ok=true;return[{json:{...j,recovery_execution:{operation:'crm_sync',attempt:j.recovery_attempt.attempt,success:ok,retryable_failure:false,error_type:ok?null:'already_applied_locally',error_message:ok?null:'local_state_prevents_duplicate_execution',response_reference:ok?'simulated:crm_sync:'+j.recovery.dlq_id:null}}}];"
+      },
+      "id": "691cedbe-9b04-45e2-ad73-a776ac98db15",
+      "name": "Simulated CRM Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let j=$json,ok=true;return[{json:{...j,recovery_execution:{operation:'outbound_message',attempt:j.recovery_attempt.attempt,success:ok,retryable_failure:false,error_type:ok?null:'already_applied_locally',error_message:ok?null:'local_state_prevents_duplicate_execution',response_reference:ok?'simulated:outbound_message:'+j.recovery.dlq_id:null}}}];"
+      },
+      "id": "f1d6eca5-76c2-44f5-9e51-d3ed72ad8a21",
+      "name": "Simulated Message Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2672,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let j=$json,ok=!j.booking_state||!['completed','confirmed','booked'].includes(String(j.booking_state.status||'').toLowerCase());return[{json:{...j,recovery_execution:{operation:'booking_event',attempt:j.recovery_attempt.attempt,success:ok,retryable_failure:false,error_type:ok?null:'already_applied_locally',error_message:ok?null:'local_state_prevents_duplicate_execution',response_reference:ok?'simulated:booking_event:'+j.recovery.dlq_id:null}}}];"
+      },
+      "id": "8ac4b898-daff-4727-a1c0-10641c172b2e",
+      "name": "Inspect Booking Recovery State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let j=$json,ok=!j.followup_state||String(j.followup_state.status||'').toLowerCase()!=='executed';return[{json:{...j,recovery_execution:{operation:'followup_execution',attempt:j.recovery_attempt.attempt,success:ok,retryable_failure:false,error_type:ok?null:'already_applied_locally',error_message:ok?null:'local_state_prevents_duplicate_execution',response_reference:ok?'simulated:followup_execution:'+j.recovery.dlq_id:null}}}];"
+      },
+      "id": "4dcff0a0-a350-430a-996c-a7bc1d01861d",
+      "name": "Inspect Follow-Up Recovery State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2992,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let j=$json,ok=true;return[{json:{...j,recovery_execution:{operation:'generic_api_call',attempt:j.recovery_attempt.attempt,success:ok,retryable_failure:false,error_type:ok?null:'already_applied_locally',error_message:ok?null:'local_state_prevents_duplicate_execution',response_reference:ok?'simulated:generic_api_call:'+j.recovery.dlq_id:null}}}];"
+      },
+      "id": "c87a608d-5466-4a43-a5cb-0012249050b5",
+      "name": "Simulated Generic API Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let d=$json.recovery_decision?.decision||'manual_required',ok=$json.recovery_execution?.success===true,n=$json.recovery_attempt?.attempt;if(ok)d='resolved';let st=d==='resolved'||d==='already_completed'?'resolved':d==='retryable'&&n<3?'pending':'failed',ev=d==='already_completed'?'replay_skipped_already_completed':d==='resolved'?'recovery_attempt_succeeded':st==='pending'?'recovery_retry_scheduled':d==='permanent'?'dlq_permanent_failure':d==='exhausted'?'dlq_retry_exhausted':'recovery_manual_review_required',fin=d==='already_completed'?'resolved_without_replay':d==='resolved'?'resolved':st==='pending'?'retry_scheduled':d==='manual_required'?'manual_required':'failed';return[{json:{...$json,terminal:{status:st,event:ev,attempt:n,final:fin,reason:d}}}];"
+      },
+      "id": "50605c95-ce57-41db-bc5a-d4842b6719e5",
+      "name": "Prepare Recovery Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb c),u AS(UPDATE dead_letter_queue d SET status=i.c#>>'{terminal,status}',attempt_count=coalesce((i.c#>>'{terminal,attempt}')::int,d.attempt_count),reprocessed_at=case when i.c#>>'{terminal,status}' in('resolved','failed') then now() else null end FROM i WHERE d.id=(i.c#>>'{recovery,dlq_id}')::uuid AND d.status='reprocessing' RETURNING d.id),a AS(INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload) SELECT (i.c#>>'{recovery,lead_id}')::uuid,i.c#>>'{terminal,event}','WF07_error_recovery',$2,jsonb_build_object('dlq_id',i.c#>>'{recovery,dlq_id}','original_workflow',i.c#>>'{recovery,workflow}','operation',i.c#>>'{recovery,operation}','attempt',coalesce((i.c#>>'{terminal,attempt}')::int,(i.c#>>'{recovery,attempt_count}')::int),'idempotency_key',i.c#>>'{recovery,idempotency_key}','reason',i.c#>>'{terminal,reason}','response_reference',i.c#>>'{recovery_execution,response_reference}','recovery_mode',i.c#>>'{recovery,recovery_mode}','retry_policy',i.c#>'{recovery_attempt,retry_policy}') FROM i WHERE i.c#>>'{recovery,lead_id}' IS NOT NULL AND exists(select 1 from u)) SELECT jsonb_build_object('base',i.c) context FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "5f7912a5-e82c-4dd4-8e6a-4602de03726b",
+      "name": "Persist Recovery Decision",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3760,
+        912
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fs0",
+                    "leftValue": "={{ $json.context.base.terminal.final }}",
+                    "rightValue": "resolved_without_replay",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolved_without_replay"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fs1",
+                    "leftValue": "={{ $json.context.base.terminal.final }}",
+                    "rightValue": "resolved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolved"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fs2",
+                    "leftValue": "={{ $json.context.base.terminal.final }}",
+                    "rightValue": "retry_scheduled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "retry_scheduled"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fs3",
+                    "leftValue": "={{ $json.context.base.terminal.final }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fs4",
+                    "leftValue": "={{ $json.context.base.terminal.final }}",
+                    "rightValue": "manual_required",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "manual_required"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "1ac836d0-419f-4ef3-b40b-b32b2c0d41b5",
+      "name": "Recovery Finalization",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3904,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let b=$json.context.base;return[{json:{status:b.terminal.final,dlq_id:b.recovery.dlq_id,attempt:b.terminal.attempt??b.recovery.attempt_count,processed_at:new Date().toISOString()}}];"
+      },
+      "id": "1cf5c3b7-e110-49be-8d09-1d4c21a03ca8",
+      "name": "Finalize Resolved",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let b=$json.context.base;return[{json:{status:b.terminal.final,dlq_id:b.recovery.dlq_id,attempt:b.terminal.attempt??b.recovery.attempt_count,processed_at:new Date().toISOString()}}];"
+      },
+      "id": "e3196a28-71d2-41db-8eb1-a88f0385af11",
+      "name": "Finalize Retry Scheduled",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let b=$json.context.base;return[{json:{status:b.terminal.final,dlq_id:b.recovery.dlq_id,attempt:b.terminal.attempt??b.recovery.attempt_count,processed_at:new Date().toISOString()}}];"
+      },
+      "id": "bf7db099-54e6-46df-aca6-0a2878c6a296",
+      "name": "Finalize Failed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let b=$json.context.base;return[{json:{status:b.terminal.final,dlq_id:b.recovery.dlq_id,attempt:b.terminal.attempt??b.recovery.attempt_count,processed_at:new Date().toISOString()}}];"
+      },
+      "id": "71e93e62-d5dc-4ef1-b2fa-677dbdfd3be3",
+      "name": "Finalize Manual Required",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Optional reviewer configuration: set to a DLQ UUID; null selects oldest pending.\nconst manual_dlq_id = \"8444357a-a1aa-49c2-b3ae-575547324664\";\nconst id = typeof manual_dlq_id === 'string' && manual_dlq_id.trim() ? manual_dlq_id.trim() : null;\nif (id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) throw new Error('manual_dlq_id must be a UUID or null');\nreturn [{json:{recovery_selection:{recovery_mode:id?'manual_targeted':'manual_oldest',manual_dlq_id:id}}}];"
+      },
+      "id": "c2ad890c-66b7-49da-ab10-9e2575800821",
+      "name": "Prepare Manual Recovery Selection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{recovery_selection:{recovery_mode:'scheduled',manual_dlq_id:null}}}];"
+      },
+      "id": "8e0ec4c0-c31b-4e1c-adf1-dd5e110f6cef",
+      "name": "Prepare Scheduled Recovery Selection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        928
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Recovery Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Manual Recovery Selection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Recovery Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Scheduled Recovery Selection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Pending DLQ Work": {
+      "main": [
+        [
+          {
+            "node": "DLQ Item Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim DLQ Item": {
+      "main": [
+        [
+          {
+            "node": "Claim Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Recovery Context": {
+      "main": [
+        [
+          {
+            "node": "Classify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Failure": {
+      "main": [
+        [
+          {
+            "node": "Load Original Operation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Original Operation State": {
+      "main": [
+        [
+          {
+            "node": "Determine Recovery Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Recovery Decision": {
+      "main": [
+        [
+          {
+            "node": "Recovery Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recovery Attempt": {
+      "main": [
+        [
+          {
+            "node": "Recovery Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recovery Result": {
+      "main": [
+        [
+          {
+            "node": "Persist Recovery Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Recovery Decision": {
+      "main": [
+        [
+          {
+            "node": "Recovery Finalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DLQ Item Available?": {
+      "main": [
+        [
+          {
+            "node": "Claim DLQ Item",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize No Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Recovery Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Already Claimed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recovery Decision": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recovery Operation": {
+      "main": [
+        [
+          {
+            "node": "Simulated CRM Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Simulated Message Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inspect Booking Recovery State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inspect Follow-Up Recovery State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Simulated Generic API Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated CRM Recovery": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated Message Recovery": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect Booking Recovery State": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect Follow-Up Recovery State": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated Generic API Recovery": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recovery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recovery Finalization": {
+      "main": [
+        [
+          {
+            "node": "Finalize Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Retry Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Manual Required",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Manual Required",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Manual Recovery Selection": {
+      "main": [
+        [
+          {
+            "node": "Find Pending DLQ Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Scheduled Recovery Selection": {
+      "main": [
+        [
+          {
+            "node": "Find Pending DLQ Work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "acb5f10f-5e1d-431f-a969-7c880659a668",
+  "meta": {
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "FOmRum9ubO4v1dry",
+  "tags": []
+}

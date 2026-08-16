@@ -1,0 +1,71 @@
+[
+  {
+    "booking_event": {
+      "source": "calendar",
+      "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+      "event_id": "evidence-t28-converted-002",
+      "booking_id": "t25-meeting-001",
+      "event_type": "converted",
+      "occurred_at": "2026-08-15T19:10:00Z",
+      "scheduled_at": null,
+      "idempotency_key": "booking_event:calendar:evidence-t28-converted-002"
+    },
+    "authoritative_lead": {
+      "id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+      "name": "T24 Followup Retry Lead",
+      "is_vip": false,
+      "source": "website",
+      "consent": true,
+      "country": "Egypt",
+      "message": "We are exploring automation options for our business.",
+      "industry": "Technology",
+      "priority": "medium",
+      "crm_stage": "won",
+      "email_raw": "t24.retry2@example.com",
+      "phone_raw": "+201155524024",
+      "created_at": "2026-08-15T11:59:49.634934+00:00",
+      "rule_score": 60,
+      "updated_at": "2026-08-15T20:04:18.02322+00:00",
+      "next_action": "handoff_to_delivery",
+      "received_at": "2026-08-15T11:59:49.343+00:00",
+      "company_name": "Delta Systems",
+      "company_size": 240,
+      "final_status": "nurture",
+      "odoo_lead_id": null,
+      "ai_confidence": 0.75,
+      "identity_status": "unique",
+      "email_normalized": "t24.retry2@example.com",
+      "phone_normalized": "+201155524024",
+      "service_interest": "CRM Automation",
+      "ai_classification": "medium_potential",
+      "processing_status": "completed",
+      "strategic_account": false,
+      "validation_status": "valid",
+      "external_source_id": "evidence-t24-followup-retry-002",
+      "rule_classification": "nurture",
+      "qualification_reason": "neutral_ai_signal: deterministic classification nurture preserved.",
+      "assigned_sales_rep_id": null
+    },
+    "booking": {
+      "id": "b5b94e62-1c41-45d1-ad2a-0edf0365a8b1",
+      "source": null,
+      "status": "completed",
+      "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+      "created_at": "2026-08-15T15:44:25.889774+00:00",
+      "meeting_at": "2026-08-22T12:30:00+00:00",
+      "updated_at": "2026-08-15T20:04:18.02322+00:00",
+      "external_booking_id": "t25-meeting-001"
+    },
+    "mutation_success": true,
+    "cancelled_count": "0",
+    "notification": {
+      "type": "notification_skipped",
+      "sales_rep_id": null,
+      "lead_id": "b9716cb2-84fe-44c3-aadb-6ce2cb9726f0",
+      "booking_id": "t25-meeting-001",
+      "meeting_at": "2026-08-22T12:30:00+00:00",
+      "channel": "simulated",
+      "reason": "no_assigned_sales_rep"
+    }
+  }
+]

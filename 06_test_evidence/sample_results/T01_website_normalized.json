@@ -1,0 +1,42 @@
+[
+  {
+    "lead_id": "4e29b2d9-c387-41dd-ba7a-2eaaff82095a",
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t01-website-001",
+      "received_at": "2026-08-13T12:47:30.645Z"
+    },
+    "contact": {
+      "name": "Evidence Website Lead",
+      "phone_raw": "+201001112233",
+      "phone_normalized": null,
+      "email_raw": "evidence.website@example.com",
+      "email_normalized": null,
+      "consent": true
+    },
+    "business": {
+      "company_name": "Evidence Co",
+      "service_interest": "AI Automation",
+      "country": "Egypt",
+      "industry": null,
+      "company_size": null,
+      "strategic_account": false
+    },
+    "request": {
+      "message": "Testing website intake normalization.",
+      "urgency": "unknown"
+    },
+    "processing": {
+      "status": "processing",
+      "retry_count": 0,
+      "last_error": null,
+      "updated_at": "2026-08-13T12:47:30.645Z",
+      "current_workflow": "WF01_website_intake",
+      "next_workflow": "WF02_validation_identity"
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    }
+  }
+]

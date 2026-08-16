@@ -1,0 +1,64 @@
+[
+  {
+    "recovery": {
+      "dlq_id": "d37132a0-4712-444f-8346-e739440dd9ea",
+      "lead_id": "e34e7601-f00f-432b-ab3e-d473fac081b9",
+      "payload": {
+        "crm_stage": "qualified",
+        "next_action": "sales_follow_up",
+        "idempotency_key": "t31-v2:crm_sync:e34e7601-f00f-432b-ab3e-d473fac081b9"
+      },
+      "workflow": "WF04_routing_crm",
+      "operation": "crm_sync",
+      "error_type": "http_503",
+      "max_attempts": 3,
+      "attempt_count": 1,
+      "error_message": "CRM provider unavailable; operator requested targeted manual recovery",
+      "manual_dlq_id": null,
+      "idempotency_key": "t31-v2:crm_sync:e34e7601-f00f-432b-ab3e-d473fac081b9"
+    },
+    "failure_classification": {
+      "class": "transient",
+      "reason": "classified_transient",
+      "retryable": true
+    },
+    "original_operation_state": {
+      "status": "missing",
+      "expires_at": null,
+      "idempotency_key": "t31-v2:crm_sync:e34e7601-f00f-432b-ab3e-d473fac081b9",
+      "already_completed": false,
+      "response_reference": null
+    },
+    "booking_state": null,
+    "followup_state": null,
+    "recovery_decision": {
+      "decision": "retryable",
+      "reason": "retryable",
+      "safe_to_execute": true
+    },
+    "recovery_attempt": {
+      "attempt": 2,
+      "retry_policy": {
+        "strategy": "scheduler_driven",
+        "scheduler_interval_minutes": 5,
+        "retry_on_next_cycle": true
+      }
+    },
+    "recovery_execution": {
+      "operation": "crm_sync",
+      "attempt": 2,
+      "success": true,
+      "retryable_failure": false,
+      "error_type": null,
+      "error_message": null,
+      "response_reference": "simulated:crm_sync:d37132a0-4712-444f-8346-e739440dd9ea"
+    },
+    "terminal": {
+      "status": "resolved",
+      "event": "recovery_attempt_succeeded",
+      "attempt": 2,
+      "final": "resolved",
+      "reason": "resolved"
+    }
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "80070d42-a649-446e-a6cd-6eecf8746704",
+    "name": "T34 SLA Breach Lead",
+    "final_status": "qualified",
+    "crm_stage": "qualified",
+    "next_action": "sla_escalation",
+    "processing_status": "processing",
+    "priority": "critical",
+    "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6",
+    "event_type": "sla_breached",
+    "workflow_name": "WF08_monitoring_sla",
+    "execution_id": "731",
+    "payload": {
+      "lead_id": "80070d42-a649-446e-a6cd-6eecf8746704",
+      "priority": "critical",
+      "detected_at": "2026-08-16T08:00:32.145498+00:00",
+      "sla_started_at": "2026-08-16T07:12:44.3539+00:00",
+      "elapsed_minutes": 47,
+      "new_next_action": "sla_escalation",
+      "threshold_minutes": 30,
+      "previous_next_action": "sales_follow_up",
+      "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6"
+    },
+    "created_at": "2026-08-16 08:00:32.145498+00"
+  }
+]

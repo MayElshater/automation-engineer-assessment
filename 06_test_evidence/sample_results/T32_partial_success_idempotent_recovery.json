@@ -1,0 +1,11 @@
+[
+  {
+    "dlq_id": "8444357a-a1aa-49c2-b3ae-575547324664",
+    "dlq_status": "resolved",
+    "attempt_count": 1,
+    "operation": "crm_sync",
+    "idempotency_key": "t32-v2:crm_sync:e34e7601-f00f-432b-ab3e-d473fac081b9",
+    "operation_status": "completed",
+    "response_reference": "simulated:crm_sync:t32-partial-success"
+  }
+]

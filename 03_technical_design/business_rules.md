@@ -8,6 +8,85 @@ The deterministic score is the primary decision mechanism. The AI model provides
 
 ---
 
+# Identity Resolution
+
+Identity resolution in WF02 is separate from qualification scoring in WF03.
+
+## Exact Duplicate
+
+Exact duplicate detection is deterministic. A lead is an exact duplicate when either its normalized phone or normalized email matches an existing canonical lead. Exact identifier matching takes precedence over contextual duplicate scoring.
+
+```text
+Normalized Phone Match?
+        ↓ yes
+Exact Duplicate
+        ↓
+Evaluate Merge Safety
+
+else
+
+Normalized Email Match?
+        ↓ yes
+Exact Duplicate
+        ↓
+Evaluate Merge Safety
+
+else
+        ↓
+Contextual Duplicate Evaluation
+```
+
+The same normalized phone is sufficient for exact identity detection, as is the same normalized email. Neither match requires name or company agreement, and an exact identifier match must never fall through to `unique`.
+
+Conflicting secondary data is recorded as an identity conflict and handled as a merge-safety concern; it does not reverse the exact identity decision. The automatic merge path may fill missing canonical fields but must not overwrite a conflicting non-empty canonical identifier.
+
+```text
+same phone
+different email
+        ↓
+identity = exact_duplicate
+match_type = exact_phone
+confidence = 1.0
+        ↓
+evaluate whether automatic merge is safe
+```
+
+## Likely Duplicate
+
+Contextual likely-duplicate scoring runs only when there is no exact normalized phone match and no exact normalized email match. The contextual signals and weights remain:
+
+- Normalized name match: +0.3
+- Company match: +0.2
+- Different source: +0.1
+- Arrival within 2 minutes: +0.2
+- Same service interest: +0.1
+
+A contextual confidence of at least 0.6 remains a likely duplicate and enters Manual Review.
+
+```text
+likely_duplicate
+        ↓
+manual_review
+```
+
+## Unique
+
+A lead is unique only when no exact normalized phone match exists, no exact normalized email match exists, and the contextual score is below the likely-duplicate threshold.
+
+```text
+Identity Match Score
+→ determines whether submissions likely represent the same person
+→ WF02
+
+Qualification Score
+→ determines lead business value
+→ WF03
+```
+
+These scores are independent and must not be mixed.
+
+---
+
 # Rule-Based Scoring
 
 ## Company Size

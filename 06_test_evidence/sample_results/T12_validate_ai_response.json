@@ -1,0 +1,113 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t12-ai-classification-001",
+      "received_at": "2026-08-14T11:32:26.681Z"
+    },
+    "contact": {
+      "name": "T12 AI Classification Lead",
+      "consent": true,
+      "email_raw": "t12.ai@example.com",
+      "phone_raw": "+201055512012",
+      "email_normalized": "t12.ai@example.com",
+      "phone_normalized": "+201055512012"
+    },
+    "lead_id": "6b76eab3-18d8-4d9e-a83c-e8de1f38b84e",
+    "request": {
+      "message": "We are evaluating AI automation for our customer operations and would like a proposal for implementation.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Unknown",
+      "company_name": "Nova Solutions",
+      "company_size": 50,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "enrichment": {
+      "valid": true,
+      "errors": [],
+      "status": "completed",
+      "required": true,
+      "response": {
+        "country": "Egypt",
+        "industry": "Unknown",
+        "confidence": 0.6,
+        "company_size": 50,
+        "strategic_account": false
+      },
+      "completed_at": "2026-08-14T11:32:41.950Z",
+      "merged_fields": [
+        "company_size",
+        "industry"
+      ],
+      "requested_fields": [
+        "company_size",
+        "industry"
+      ],
+      "attempts_configured": 3
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-14T11:32:42.137Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t12-ai-classification-001",
+      "current_workflow": "WF03_enrichment_qualification"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "wf03_context": {
+      "started_at": "2026-08-14T11:32:27.837Z",
+      "execution_id": "296"
+    },
+    "qualification": {
+      "is_vip": false,
+      "rule_score": 30,
+      "score_breakdown": {
+        "intent": 15,
+        "urgency": 0,
+        "geography": 0,
+        "company_size": 10,
+        "service_value": 5,
+        "strategic_account": 0,
+        "data_quality_penalty": 0
+      },
+      "rule_classification": "unqualified"
+    },
+    "scoring_context": {
+      "intent_basis": "clear_business_requirement",
+      "urgency_basis": "low",
+      "service_value_tier": "low",
+      "configuration_notes": [
+        "Service-value and target-market mappings require approved configuration; current explicit demo defaults use empty mapping sets.",
+        "Intent and urgency keyword lists are centralized assessment/demo defaults and do not use Gemini."
+      ]
+    },
+    "ai_assessment": {
+      "valid": true,
+      "technical_failure": false,
+      "classification": "high_potential",
+      "urgency": "high",
+      "intent": "requesting a proposal for AI automation implementation in customer operations",
+      "confidence": 0.95,
+      "reason": "The lead explicitly states they are evaluating AI automation and directly requests a proposal for implementation, indicating strong buying intent and a clear business need."
+    }
+  }
+]

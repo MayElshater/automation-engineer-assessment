@@ -8,13 +8,13 @@
         "width": 940,
         "color": 5
       },
-      "id": "032beed2-cc9b-4657-a3ab-00c3a6242903",
+      "id": "db75013c-abcf-4e9d-bc4b-65178d3d205d",
       "name": "Workflow Responsibility",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2288,
-        624
+        3536,
+        1312
       ]
     },
     {
@@ -24,36 +24,37 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "52f57a5d-f67f-4442-be7d-74586b822343",
+      "id": "20877ad3-f8d8-407a-962d-8e711e9f5bb7",
       "name": "Website Lead Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        2368,
-        1024
+        3616,
+        1712
       ],
       "webhookId": "22dd64eb-96ab-41ff-a9e0-064e98b6ded8"
     },
     {
       "parameters": {
-        "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());\n  }\n  return false;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    const value = character === 'x' ? random : (random & 0x3) | 0x8;\n    return value.toString(16);\n  });\n};\n\nconst payload = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    lead_id: generateUuid(),\n    source: {\n      type: 'website',\n      external_id: valueOrNull(payload.form_submission_id),\n      received_at: timestamp\n    },\n    contact: {\n      name: valueOrNull(payload.full_name),\n      phone_raw: valueOrNull(payload.phone),\n      phone_normalized: null,\n      email_raw: valueOrNull(payload.email),\n      email_normalized: null,\n      consent: toBoolean(payload.consent)\n    },\n    business: {\n      company_name: valueOrNull(payload.company),\n      service_interest: valueOrNull(payload.service),\n      country: valueOrNull(payload.country),\n      industry: null,\n      company_size: null,\n      strategic_account: false\n    },\n    request: {\n      message: valueOrNull(payload.message),\n      urgency: 'unknown'\n    },\n    processing: {\n      status: 'processing',\n      retry_count: 0,\n      last_error: null,\n      updated_at: timestamp,\n      current_workflow: 'WF01_website_intake',\n      next_workflow: 'WF02_validation_identity'\n    },\n    metadata: {\n      schema_version: '1.0',\n      workflow_version: '1.0'\n    }\n  }\n}];"
+        "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());\n  }\n  return false;\n};\n\nconst toNonNegativeNumberOrNull = (value) => {\n  if (value === undefined || value === null || value === '') return null;\n\n  const number = Number(value);\n\n  if (\n    !Number.isFinite(number) ||\n    !Number.isInteger(number) ||\n    number < 0\n  ) return null;\n\n  return number;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();\n\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    const value = character === 'x' ? random : (random & 0x3) | 0x8;\n    return value.toString(16);\n  });\n};\n\nconst payload =\n  $json.body && typeof $json.body === 'object'\n    ? $json.body\n    : $json;\n\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    lead_id: generateUuid(),\n\n    source: {\n      type: 'website',\n      external_id: valueOrNull(payload.form_submission_id),\n      received_at: timestamp\n    },\n\n    contact: {\n      name: valueOrNull(payload.full_name),\n      phone_raw: valueOrNull(payload.phone),\n      phone_normalized: null,\n      email_raw: valueOrNull(payload.email),\n      email_normalized: null,\n      consent: toBoolean(payload.consent)\n    },\n\n    business: {\n      company_name: valueOrNull(payload.company),\n      service_interest: valueOrNull(payload.service),\n      country: valueOrNull(payload.country),\n      industry: valueOrNull(payload.industry),\n      company_size: toNonNegativeNumberOrNull(payload.company_size),\n\n      // Internal system-controlled field.\n      strategic_account: false\n    },\n\n    request: {\n      message: valueOrNull(payload.message),\n      urgency: 'unknown'\n    },\n\n    processing: {\n      status: 'processing',\n      retry_count: 0,\n      last_error: null,\n      updated_at: timestamp,\n      current_workflow: 'WF01_website_intake',\n      next_workflow: 'WF02_validation_identity'\n    },\n\n    metadata: {\n      schema_version: '1.0',\n      workflow_version: '1.0'\n    }\n  }\n}];"
       },
-      "id": "4f50c22b-9684-4a4b-8e2b-2cc560d8706b",
+      "id": "7396fc3e-bc31-4629-bcd2-424e1f2204fb",
       "name": "Normalize Website Lead",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2656,
-        1024
+        3904,
+        1712
       ]
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "WF02_validation_identity",
-          "mode": "id",
-          "cachedResultName": "WF02_validation_identity"
+          "value": "HeoO8LzCz7vlJFyN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HeoO8LzCz7vlJFyN",
+          "cachedResultName": "WF02 - Validation & Identity Resolution"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -68,13 +69,13 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "b6e12ee8-5421-49bc-886e-fdd51be4c663",
+      "id": "92080ce9-205c-4fc5-8758-2660865d42e2",
       "name": "Execute WF02 - Validation & Identity",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        2880,
-        1024
+        4128,
+        1712
       ]
     },
     {
@@ -85,13 +86,13 @@
           "responseCode": 202
         }
       },
-      "id": "da43fb3f-e781-40a0-8e46-9cce86279e31",
+      "id": "9f01b22c-48d3-49d5-81bd-ffeadde0e655",
       "name": "Respond to Website Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        3072,
-        1024
+        4320,
+        1712
       ]
     }
   ],
@@ -119,11 +120,6 @@
         ]
       ]
     },
-    "Respond to Website Webhook": {
-      "main": [
-        []
-      ]
-    },
     "Execute WF02 - Validation & Identity": {
       "main": [
         [
@@ -136,12 +132,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "2a9a8bb8-4c43-42a7-aa3c-e54832e5a7d5",
+  "versionId": "c50e6463-9ebf-47dc-a810-db8e3efc0d43",
   "meta": {
     "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
   },

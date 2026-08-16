@@ -1,0 +1,42 @@
+[
+  {
+    "lead_id": "841b6727-a710-4dd7-9148-eaf676fe7b29",
+    "source": {
+      "type": "whatsapp",
+      "external_id": "evidence-t02-whatsapp-001",
+      "received_at": "2026-08-13T13:26:49.752Z"
+    },
+    "contact": {
+      "name": "Evidence WhatsApp Lead",
+      "phone_raw": "201001112244",
+      "phone_normalized": null,
+      "email_raw": "evidence.whatsapp@example.com",
+      "email_normalized": null,
+      "consent": true
+    },
+    "business": {
+      "company_name": null,
+      "service_interest": "AI Automation",
+      "country": "EG",
+      "industry": null,
+      "company_size": null,
+      "strategic_account": false
+    },
+    "request": {
+      "message": "Testing WhatsApp intake normalization.",
+      "urgency": "unknown"
+    },
+    "processing": {
+      "status": "processing",
+      "retry_count": 0,
+      "last_error": null,
+      "updated_at": "2026-08-13T13:26:49.752Z",
+      "current_workflow": "WF01_whatsapp_intake",
+      "next_workflow": "WF02_validation_identity"
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    }
+  }
+]

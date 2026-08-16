@@ -1,0 +1,68 @@
+[
+  {
+    "context": {
+      "base": {
+        "recovery": {
+          "dlq_id": "f9c678d0-a67e-472f-9bf8-60b86b570dc4",
+          "lead_id": "d5551356-032c-4e52-8ad7-6649c006a4b0",
+          "payload": {
+            "crm_stage": "qualified",
+            "next_action": "sales_follow_up",
+            "idempotency_key": "t29:crm_sync:d5551356-032c-4e52-8ad7-6649c006a4b0"
+          },
+          "workflow": "WF04_routing_crm",
+          "operation": "crm_sync",
+          "error_type": "http_429",
+          "max_attempts": 3,
+          "attempt_count": 0,
+          "error_message": "CRM API rate limit encountered during sync",
+          "manual_dlq_id": null,
+          "idempotency_key": "t29:crm_sync:d5551356-032c-4e52-8ad7-6649c006a4b0"
+        },
+        "terminal": {
+          "event": "recovery_attempt_succeeded",
+          "final": "resolved",
+          "reason": "resolved",
+          "status": "resolved",
+          "attempt": 1
+        },
+        "booking_state": null,
+        "followup_state": null,
+        "recovery_attempt": {
+          "attempt": 1,
+          "retry_policy": {
+            "strategy": "scheduler_driven",
+            "retry_on_next_cycle": true,
+            "scheduler_interval_minutes": 5
+          }
+        },
+        "recovery_decision": {
+          "reason": "retryable",
+          "decision": "retryable",
+          "safe_to_execute": true
+        },
+        "recovery_execution": {
+          "attempt": 1,
+          "success": true,
+          "operation": "crm_sync",
+          "error_type": null,
+          "error_message": null,
+          "retryable_failure": false,
+          "response_reference": "simulated:crm_sync:f9c678d0-a67e-472f-9bf8-60b86b570dc4"
+        },
+        "failure_classification": {
+          "class": "transient",
+          "reason": "classified_transient",
+          "retryable": true
+        },
+        "original_operation_state": {
+          "status": "missing",
+          "expires_at": null,
+          "idempotency_key": "t29:crm_sync:d5551356-032c-4e52-8ad7-6649c006a4b0",
+          "already_completed": false,
+          "response_reference": null
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "id": "05641432-429d-4d55-871e-420d44ef844a",
+    "name": "T33 SLA Within Threshold Lead",
+    "final_status": "qualified",
+    "crm_stage": "qualified",
+    "next_action": "sales_follow_up",
+    "processing_status": "processing",
+    "priority": "high",
+    "assigned_sales_rep_id": "58432239-bd30-4881-9324-d2763433d4e6",
+    "sla_started_at": "2026-08-16 07:31:15.353584+00",
+    "elapsed_minutes": 2,
+    "sla_breach_events": 0
+  }
+]

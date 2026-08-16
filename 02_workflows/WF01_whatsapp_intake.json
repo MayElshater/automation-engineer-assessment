@@ -8,13 +8,13 @@
         "width": 940,
         "color": 5
       },
-      "id": "c1a531c6-44cf-4248-a37e-a5961e6ba5bb",
+      "id": "3ea56ea9-5a83-4033-8d23-d0b735797718",
       "name": "Workflow Responsibility",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        1056,
+        624
       ]
     },
     {
@@ -24,13 +24,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "89363764-737e-4791-82db-d53f64223df0",
+      "id": "5374f506-b90f-454c-b288-d066d7b68dee",
       "name": "WhatsApp Lead Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        80,
-        400
+        1136,
+        1024
       ],
       "webhookId": "06e24fec-a782-4711-abbc-3370127fac45"
     },
@@ -38,22 +38,23 @@
       "parameters": {
         "jsCode": "const valueOrNull = (value) => {\n  if (value === undefined || value === null) return null;\n  if (typeof value === 'string' && value.trim() === '') return null;\n  return value;\n};\n\nconst toBoolean = (value) => {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value === 1;\n  if (typeof value === 'string') {\n    return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());\n  }\n  return false;\n};\n\nconst generateUuid = () => {\n  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    const value = character === 'x' ? random : (random & 0x3) | 0x8;\n    return value.toString(16);\n  });\n};\n\nconst payload = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    lead_id: generateUuid(),\n    source: {\n      type: 'whatsapp',\n      external_id: valueOrNull(payload.message_id),\n      received_at: timestamp\n    },\n    contact: {\n      name: valueOrNull(payload.profile_name),\n      phone_raw: valueOrNull(payload.wa_id),\n      phone_normalized: null,\n      email_raw: valueOrNull(payload.email_address),\n      email_normalized: null,\n      consent: toBoolean(payload.opt_in)\n    },\n    business: {\n      company_name: null,\n      service_interest: valueOrNull(payload.service_interest),\n      country: valueOrNull(payload.country_code),\n      industry: null,\n      company_size: null,\n      strategic_account: false\n    },\n    request: {\n      message: valueOrNull(payload.text),\n      urgency: 'unknown'\n    },\n    processing: {\n      status: 'processing',\n      retry_count: 0,\n      last_error: null,\n      updated_at: timestamp,\n      current_workflow: 'WF01_whatsapp_intake',\n      next_workflow: 'WF02_validation_identity'\n    },\n    metadata: {\n      schema_version: '1.0',\n      workflow_version: '1.0'\n    }\n  }\n}];"
       },
-      "id": "a3e28116-2ab6-465a-9542-d061db7897b0",
+      "id": "c36c32fe-e02b-4a29-b435-4726961912ea",
       "name": "Normalize WhatsApp Lead",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        368,
-        400
+        1424,
+        1024
       ]
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "WF02_validation_identity",
-          "mode": "id",
-          "cachedResultName": "WF02_validation_identity"
+          "value": "HeoO8LzCz7vlJFyN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HeoO8LzCz7vlJFyN",
+          "cachedResultName": "WF02 - Validation & Identity Resolution"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -68,13 +69,13 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "4c14738b-82f4-4394-8fc3-01f73fc43aa8",
+      "id": "74935f42-f545-423c-98d4-9608a48e6a93",
       "name": "Execute WF02 - Validation & Identity",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        560,
-        400
+        1616,
+        1024
       ]
     },
     {
@@ -85,13 +86,13 @@
           "responseCode": 202
         }
       },
-      "id": "0f24d3e4-8e9c-4227-ad4d-494b061599a2",
+      "id": "2229e221-90d5-469a-a270-a4611a6e5328",
       "name": "Respond to WhatsApp Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        768,
-        400
+        1824,
+        1024
       ]
     }
   ],
@@ -119,11 +120,6 @@
         ]
       ]
     },
-    "Respond to WhatsApp Webhook": {
-      "main": [
-        []
-      ]
-    },
     "Execute WF02 - Validation & Identity": {
       "main": [
         [
@@ -136,12 +132,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "60c8f838-e0eb-4e30-a0c3-dc7ab1540889",
+  "versionId": "7ee8820a-5e17-4202-8a58-862c3c0f5d3d",
   "meta": {
     "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
   },

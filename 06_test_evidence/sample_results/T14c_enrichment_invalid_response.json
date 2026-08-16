@@ -1,0 +1,74 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t14-enrichment-failure-001",
+      "received_at": "2026-08-14T15:06:11.613Z"
+    },
+    "contact": {
+      "name": "T14 Enrichment Failure Lead",
+      "consent": true,
+      "email_raw": "t14.enrichment.failure@example.com",
+      "phone_raw": "+201055514014",
+      "email_normalized": "t14.enrichment.failure@example.com",
+      "phone_normalized": "+201055514014"
+    },
+    "lead_id": "749bd84a-8a19-4fb0-88bc-eb2ca94d761b",
+    "request": {
+      "message": "Testing permanent enrichment failure handling.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": null,
+      "company_name": "Delta Systems",
+      "company_size": null,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "identity": {
+      "status": "unique",
+      "confidence": 0,
+      "matched_lead_id": null,
+      "identity_conflict": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-14T15:06:12.047Z",
+      "retry_count": 0,
+      "next_workflow": null,
+      "idempotency_key": "website:evidence-t14-enrichment-failure-001",
+      "current_workflow": "WF03_enrichment_qualification"
+    },
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "wf03_context": {
+      "started_at": "2026-08-14T15:06:12.007Z",
+      "execution_id": "320"
+    },
+    "enrichment": {
+      "required": true,
+      "requested_fields": [
+        "company_size",
+        "industry"
+      ],
+      "attempts_configured": 3,
+      "status": "failed",
+      "valid": false,
+      "errors": [
+        "503 - \"{\\\"detail\\\":\\\"Mock enrichment service unavailable\\\"}\"",
+        "status_not_success"
+      ],
+      "response": null,
+      "completed_at": "2026-08-14T15:06:16.324Z"
+    }
+  }
+]

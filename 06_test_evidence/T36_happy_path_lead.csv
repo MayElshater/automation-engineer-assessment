@@ -1,0 +1,2 @@
+external_id,name,mobile,email,consent,company_name,service_interest,country,message
+csv-evidence-t36-happy-001,T36 End-to-End Happy Path Lead,+201155360036,t36.happy.path@example.com,true,Nile Intelligent Systems,AI Automation,Egypt,"We are looking for an AI automation solution for lead qualification, CRM routing, customer follow-up, booking, and sales operations. We are ready to start this month."

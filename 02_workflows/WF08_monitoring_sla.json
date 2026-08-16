@@ -1,0 +1,533 @@
+{
+  "name": "WF08_monitoring_sla",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF08 Responsibility\nObserves persisted operational state, evaluates sales SLA, records deterministic escalation, and returns a reviewer-facing snapshot. It performs no general lead processing.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "c0034b8c-29df-48c6-9af8-394e2d677378",
+      "name": "WF08 Responsibility",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## SLA Rule\nEligible leads are qualified, processing, assigned, and awaiting sales_follow_up. Elapsed time of at least 30 minutes is breached. Nurture, VIP approval, manual review, completed, won, lost, and closed states are excluded.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "3c5551b5-ba34-4645-9cf3-d330f782d5a8",
+      "name": "SLA Rule",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## SLA Clock\nSLA starts at the latest sales_assigned, crm_synced, or qualification_completed event associated with the assigned sales path. Missing audit time remains monitoring_data_incomplete; no timestamp is fabricated.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "1a9aee5f-9403-4e53-9949-a977af45e201",
+      "name": "SLA Clock",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Escalation Behavior\nA breach keeps the owner and CRM stage, keeps processing status, changes priority to critical, and changes next_action to sla_escalation. Automatic reassignment is delegated to WF04.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "736f6f4f-63dc-4fcf-9f49-22b1e0f6f9e9",
+      "name": "Escalation Behavior",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## SLA Idempotency\nThe escalation UPDATE requires current sales_follow_up state and no prior sla_breached event. Reruns return already_escalated and never add duplicate breach events.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "f47f1220-e61c-4984-af2d-0425aff925cb",
+      "name": "SLA Idempotency",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Operational Metrics\nSummary counts come from leads, dead_letter_queue, lead_events, bookings, and followups: totals, classifications, failures, duplicates, SLA breaches, bookings, wins, and active follow-ups.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "e4c77998-074d-41f8-8b7d-975620d08d24",
+      "name": "Operational Metrics",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Audit Strategy\nOnly significant sla_breached events are persisted. Healthy polling produces output but no periodic audit spam. Null lead IDs are not relevant because candidates originate from leads.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "15a6f5a4-cc79-4532-9b42-9ef6915c2aad",
+      "name": "Audit Strategy",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## WF07 Boundary\nWF08 does not implement recovery or a second DLQ system. WF07 remains responsible for centralized error recovery.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "3988d000-932e-4cd8-bbc0-e265484e6058",
+      "name": "WF07 Boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Known Limitations\nSLA start uses audit timestamps because leads has no assigned_at. Reassignment stays in WF04. Output is structured JSON rather than a dashboard; production could export metrics to Grafana, Datadog, or Looker. SLA breach deduplication is lead-level in this assessment implementation. A production system with multiple independent sales cycles should use an SLA-cycle or assignment-specific idempotency key.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "b4cb82b5-572b-4f4f-9927-a5c32e96489f",
+      "name": "Known Limitations",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Test Scope\nSupports future T33 within-threshold, T34 one-time breach escalation, and T35 persisted metric/audit correctness without test-specific branches.",
+        "height": 200,
+        "width": 440
+      },
+      "id": "a2a210d9-f5cd-4e06-8a3d-7a30069791ac",
+      "name": "Test Scope",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        752
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f7c66b6e-3206-4e30-982e-049fb275db59",
+      "name": "Manual Monitoring Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "9f9eb0ff-f658-4599-9c80-efc1c022c885",
+      "name": "Schedule Monitoring Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH candidates AS (\n SELECT l.id lead_id,l.name,l.final_status,l.crm_stage,l.next_action,l.processing_status,\n l.assigned_sales_rep_id,l.priority,\n clock.sla_started_at,\n CASE WHEN clock.sla_started_at IS NULL THEN NULL\n      ELSE floor(extract(epoch from(now()-clock.sla_started_at))/60)::integer END minutes_since_sla_start\n FROM leads l\n LEFT JOIN LATERAL (\n  SELECT e.created_at sla_started_at FROM lead_events e\n  WHERE e.lead_id=l.id AND e.event_type IN('sales_assigned','crm_synced','qualification_completed')\n  ORDER BY e.created_at DESC,CASE e.event_type WHEN 'sales_assigned' THEN 1 WHEN 'crm_synced' THEN 2 ELSE 3 END LIMIT 1\n ) clock ON true\n WHERE l.final_status='qualified' AND l.processing_status='processing'\n AND l.assigned_sales_rep_id IS NOT NULL AND l.next_action='sales_follow_up'\n ORDER BY clock.sla_started_at NULLS LAST,l.id\n)\nSELECT jsonb_build_object('candidates',coalesce(jsonb_agg(to_jsonb(candidates)),'[]'::jsonb),'loaded_at',now()) context FROM candidates;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "8d68efdb-dabd-4c55-a67a-a77240298844",
+      "name": "Load SLA Candidates",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        288,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const candidates=$json.context.candidates||[];\nif(!candidates.length)return[{json:{evaluation_batch:{candidate_count:0,within_threshold_count:0,breached_count:0,data_incomplete_count:0},sla_outcome:'within_threshold',lead_id:null,sla:{eligible:false,threshold_minutes:30,elapsed_minutes:null,status:'within_threshold',breached:false},no_candidates:true}}];\nconst evaluations=candidates.map(c=>{const elapsed=c.minutes_since_sla_start===null?null:Number(c.minutes_since_sla_start);const status=elapsed===null?'monitoring_data_incomplete':elapsed>=30?'breached':'within_threshold';return{...c,sla:{eligible:true,threshold_minutes:30,elapsed_minutes:elapsed,status,breached:status==='breached',sla_started_at:c.sla_started_at}}});\nconst batch={candidate_count:evaluations.length,within_threshold_count:evaluations.filter(x=>x.sla.status==='within_threshold').length,breached_count:evaluations.filter(x=>x.sla.breached).length,data_incomplete_count:evaluations.filter(x=>x.sla.status==='monitoring_data_incomplete').length};\nreturn evaluations.map(x=>({json:{...x,evaluation_batch:batch,sla_outcome:x.sla.status}}));"
+      },
+      "id": "a96487b3-6306-45ae-ad78-d917d96da5b8",
+      "name": "Evaluate SLA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "branch0",
+                    "leftValue": "={{ $json.sla_outcome }}",
+                    "rightValue": "within_threshold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "within_threshold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "branch1",
+                    "leftValue": "={{ $json.sla_outcome }}",
+                    "rightValue": "breached",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "breached"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "branch2",
+                    "leftValue": "={{ $json.sla_outcome }}",
+                    "rightValue": "monitoring_data_incomplete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "monitoring_data_incomplete"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "be58678d-4d22-4d60-9e6a-0e45d26a2a11",
+      "name": "SLA Outcome",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        816,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(x=>({json:{...x.json,sla_action:x.json.no_candidates?'no_candidates':'no_mutation'}}));"
+      },
+      "id": "60cb53c5-4f91-4c34-9d42-b7a2fede8b16",
+      "name": "Within Threshold",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb c),\neligible AS(\n SELECT l.* FROM leads l,i WHERE l.id=(i.c->>'lead_id')::uuid\n AND l.final_status='qualified' AND l.processing_status='processing'\n AND l.assigned_sales_rep_id IS NOT NULL AND l.next_action='sales_follow_up'\n),\nupdated AS(\n UPDATE leads l SET priority='critical',next_action='sla_escalation',updated_at=now()\n FROM i,eligible e WHERE l.id=e.id\n AND NOT EXISTS(SELECT 1 FROM lead_events x WHERE x.lead_id=l.id AND x.event_type='sla_breached')\n RETURNING l.id,e.assigned_sales_rep_id,e.next_action previous_next_action\n),\naudit AS(\n INSERT INTO lead_events(lead_id,event_type,workflow_name,execution_id,payload)\n SELECT u.id,'sla_breached','WF08_monitoring_sla',$2,\n jsonb_build_object('lead_id',u.id,'assigned_sales_rep_id',u.assigned_sales_rep_id,\n 'threshold_minutes',30,'elapsed_minutes',(i.c#>>'{sla,elapsed_minutes}')::integer,\n 'previous_next_action',u.previous_next_action,'new_next_action','sla_escalation',\n 'priority','critical','sla_started_at',i.c#>>'{sla,sla_started_at}','detected_at',now())\n FROM updated u CROSS JOIN i RETURNING id\n)\nSELECT jsonb_build_object('evaluation',i.c,'sla_action',\n CASE WHEN EXISTS(SELECT 1 FROM updated) THEN 'escalated' ELSE 'already_escalated' END) context FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "f0961033-ef7f-48c8-adff-c6eae003def8",
+      "name": "Persist SLA Breach",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1088,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(x=>({json:{...x.json,sla_action:'monitoring_data_incomplete'}}));"
+      },
+      "id": "62c7c36b-3853-4bee-a817-4e41c90696e6",
+      "name": "Monitoring Data Incomplete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH i AS(SELECT $1::jsonb c)\nSELECT jsonb_build_object(\n 'evaluation',i.c,\n 'summary',jsonb_build_object(\n  'total_leads',(SELECT count(*) FROM leads),\n  'qualified_leads',(SELECT count(*) FROM leads WHERE final_status='qualified'),\n  'nurture_leads',(SELECT count(*) FROM leads WHERE final_status='nurture'),\n  'manual_review_leads',(SELECT count(*) FROM leads WHERE final_status='manual_review' OR processing_status='manual_review'),\n  'failed_dlq_items',(SELECT count(*) FROM dead_letter_queue WHERE status='failed'),\n  'pending_dlq_items',(SELECT count(*) FROM dead_letter_queue WHERE status='pending'),\n  'resolved_dlq_items',(SELECT count(*) FROM dead_letter_queue WHERE status='resolved'),\n  'duplicates',(SELECT count(DISTINCT lead_id) FROM lead_events WHERE event_type IN('duplicate_detected','duplicate_merged')),\n  'sla_breached_leads',(SELECT count(DISTINCT lead_id) FROM lead_events WHERE event_type='sla_breached'),\n  'booked_leads',(SELECT count(DISTINCT lead_id) FROM bookings WHERE status NOT IN('cancelled','failed')),\n  'won_leads',(SELECT count(*) FROM leads WHERE crm_stage='won' OR final_status='won'),\n  'active_followups',(SELECT count(*) FROM followups WHERE status IN('scheduled','processing'))\n )) context FROM i;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json), $execution.id] }}"
+        }
+      },
+      "id": "c2c627d7-8577-4990-8f61-7f9622e80fb9",
+      "name": "Build Operational Summary",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1392,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "SuudVP7ha5aUfoCv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(({ json }) => {\n  const c = json.context || {};\n  const summary = c.summary || {};\n\n  // Build Operational Summary wraps the previous node output\n  // inside `evaluation`. Some branches (such as Persist SLA Breach)\n  // already return their result inside another `context`.\n  const wrapped = c.evaluation || {};\n  const resultContext = wrapped.context || wrapped;\n\n  // Resolve the actual SLA evaluation regardless of branch shape.\n  const evaluation = resultContext.evaluation || resultContext;\n  const batch = evaluation.evaluation_batch || {};\n\n  const action =\n    resultContext.sla_action ??\n    evaluation.sla_action ??\n    null;\n\n  return {\n    json: {\n      monitoring: {\n        generated_at: new Date().toISOString(),\n        workflow: 'WF08_monitoring_sla',\n\n        summary,\n\n        sla: {\n          threshold_minutes: 30,\n          candidate_count: Number(batch.candidate_count || 0),\n          within_threshold_count: Number(batch.within_threshold_count || 0),\n          breached_count: Number(batch.breached_count || 0),\n          data_incomplete_count: Number(batch.data_incomplete_count || 0)\n        },\n\n        current_evaluation: evaluation,\n        sla_action: action\n      }\n    }\n  };\n});"
+      },
+      "id": "f739a777-8356-40fd-8c35-16e7339ed35e",
+      "name": "Prepare Monitoring Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Monitoring Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load SLA Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Monitoring Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load SLA Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load SLA Candidates": {
+      "main": [
+        [
+          {
+            "node": "Evaluate SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate SLA": {
+      "main": [
+        [
+          {
+            "node": "SLA Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SLA Outcome": {
+      "main": [
+        [
+          {
+            "node": "Within Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Persist SLA Breach",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Monitoring Data Incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Monitoring Data Incomplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Within Threshold": {
+      "main": [
+        [
+          {
+            "node": "Build Operational Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist SLA Breach": {
+      "main": [
+        [
+          {
+            "node": "Build Operational Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monitoring Data Incomplete": {
+      "main": [
+        [
+          {
+            "node": "Build Operational Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Operational Summary": {
+      "main": [
+        [
+          {
+            "node": "Prepare Monitoring Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "fa0cde6a-2cfe-472d-8f6d-c6cfa24f64de",
+  "meta": {
+    "instanceId": "70518484b425737177938865a5fa2c0f4289042e6dfc68bfc57196617aca4c51"
+  },
+  "nodeGroups": [],
+  "id": "aV0ijCxE6Y6EZptS",
+  "tags": []
+}

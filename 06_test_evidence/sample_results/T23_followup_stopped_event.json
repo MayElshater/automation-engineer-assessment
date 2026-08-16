@@ -1,0 +1,55 @@
+[
+  {
+    "lead": {
+      "crm": {
+        "stage": "nurture",
+        "next_action": "start_nurture_sequence"
+      },
+      "source": {
+        "type": "website"
+      },
+      "contact": {
+        "name": "T21 Nurture Sequence Lead",
+        "email_normalized": "t21.nurture@example.com",
+        "phone_normalized": "+201055521021"
+      },
+      "lead_id": "9f30e2e4-d10a-4327-bd2c-94231983443a",
+      "routing": {
+        "priority": "medium",
+        "assigned_sales_rep_id": null
+      },
+      "business": {
+        "country": "Egypt",
+        "company_name": "Delta Systems",
+        "service_interest": "CRM Automation"
+      },
+      "follow_up": {
+        "sequence": "nurture"
+      },
+      "processing": {
+        "status": "processing",
+        "updated_at": "2026-08-15T10:49:00.182Z",
+        "current_workflow": "WF05_followup_engine"
+      },
+      "qualification": {
+        "final_status": "nurture"
+      },
+      "stop_evaluation": {
+        "stop_reason": "customer_replied",
+        "stop_required": true
+      },
+      "followup_candidate": {
+        "id": "0d1a259b-1c35-49ea-9443-ddd04a1f62c7",
+        "status": "scheduled",
+        "lead_id": "9f30e2e4-d10a-4327-bd2c-94231983443a",
+        "created_at": "2026-08-15T05:11:28.533349+00:00",
+        "executed_at": null,
+        "step_number": 2,
+        "scheduled_at": "2026-08-15T10:47:09.699141+00:00",
+        "sequence_type": "nurture",
+        "idempotency_key": "followup:9f30e2e4-d10a-4327-bd2c-94231983443a:nurture:2"
+      }
+    },
+    "cancelled_count": "2"
+  }
+]

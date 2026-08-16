@@ -1,0 +1,100 @@
+[
+  {
+    "source": {
+      "type": "website",
+      "external_id": "evidence-t04-unique-001",
+      "received_at": "2026-08-13T15:54:06.307+00:00"
+    },
+    "contact": {
+      "name": "Unique Evidence Lead",
+      "consent": true,
+      "email_raw": "unique.t04@example.com",
+      "phone_raw": "+201001114401",
+      "email_normalized": "unique.t04@example.com",
+      "phone_normalized": "+201001114401"
+    },
+    "lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+    "request": {
+      "message": "Need AI automation for our operations.",
+      "urgency": "unknown"
+    },
+    "business": {
+      "country": "Egypt",
+      "industry": "Unknown",
+      "company_name": "Unique Systems",
+      "company_size": 50,
+      "service_interest": "AI Automation",
+      "strategic_account": false
+    },
+    "metadata": {
+      "schema_version": "1.0",
+      "workflow_version": "1.0"
+    },
+    "processing": {
+      "status": "processing",
+      "last_error": null,
+      "updated_at": "2026-08-13T18:33:36.670Z",
+      "retry_count": 0,
+      "next_workflow": "WF02_validation_identity",
+      "idempotency_key": "website:evidence-t05-exact-phone-002",
+      "current_workflow": "WF02_validation_identity"
+    },
+    "audit_events": [
+      {
+        "lead_id": "f2d48e7d-bf37-4360-9774-3f3851e9500a",
+        "payload": {
+          "email_present": true,
+          "phone_present": true
+        },
+        "created_at": "2026-08-13T18:33:36.331Z",
+        "event_type": "normalized",
+        "execution_id": "261",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "f2d48e7d-bf37-4360-9774-3f3851e9500a",
+        "payload": {
+          "validation_status": "valid"
+        },
+        "created_at": "2026-08-13T18:33:36.355Z",
+        "event_type": "data_completed",
+        "execution_id": "261",
+        "workflow_name": "WF02_validation_identity"
+      },
+      {
+        "lead_id": "f2d48e7d-bf37-4360-9774-3f3851e9500a",
+        "event_type": "duplicate_detected",
+        "workflow_name": "WF02_validation_identity",
+        "execution_id": "261",
+        "payload": {
+          "status": "exact_duplicate",
+          "confidence": 1,
+          "matched_lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+          "identity_conflict": true,
+          "reason": "phone=true;email=false;name=false;company=false;different_source=false;within_2_minutes=false;service=true;serious_conflict=true"
+        },
+        "created_at": "2026-08-13T18:33:36.670Z"
+      }
+    ],
+    "data_quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "validation_status": "valid"
+    },
+    "identity": {
+      "status": "exact_duplicate",
+      "matched_lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+      "confidence": 1,
+      "identity_conflict": true
+    },
+    "duplicate_decision": {
+      "candidate_lead_id": "f2d48e7d-bf37-4360-9774-3f3851e9500a",
+      "matched_lead_id": "afd21413-a40c-47da-8cd2-d667cf7d4253",
+      "match_type": "exact_phone",
+      "confidence": 1,
+      "decision": "merge_missing_fields",
+      "reason": "phone=true;email=false;name=false;company=false;different_source=false;within_2_minutes=false;service=true;serious_conflict=true",
+      "created_at": "2026-08-13T18:33:36.670Z"
+    }
+  }
+]
