@@ -45,7 +45,7 @@ The submitted assessment uses a deterministic CRM adapter behind a CRM integrati
 
 ## Environment Placeholders
 
-Copy these into the deployment environment or secret manager. Do not commit real values.
+Copy these into the deployment environment or secret manager.
 
 ```dotenv
 CRM_MODE=mock
